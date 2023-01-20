@@ -1,4 +1,4 @@
-package com.nulltwenty.ordersaggregation.service;
+package com.nulltwenty.ordersaggregation.service.shipment;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -7,27 +7,27 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-public class TrackStatusService {
-    private final String URL = "http://127.0.0.1:4000/track-status?orderNumber=";
+public class ShipmentServiceImpl implements ShipmentService {
+    private static final String URL = "http://127.0.0.1:4000/shipment-products?orderNumber=";
     private final RestTemplate restTemplate;
 
-    public TrackStatusService(RestTemplate restTemplate) {
+    public ShipmentServiceImpl(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public ResponseEntity<String> getTrackStatusFromOrderNumber(int[] orderNumberArray) {
+    @Override
+    public ResponseEntity<String> getShipmentProducts(int[] orderNumberArray) {
         StringBuilder strBuilder = new StringBuilder();
         for (int i = 0; i < orderNumberArray.length; i++) {
             if (i == orderNumberArray.length - 1) {
                 strBuilder.append(orderNumberArray[i]);
             } else {
-                strBuilder.append(orderNumberArray[i] + ",");
+                strBuilder.append(orderNumberArray[i]).append(",");
             }
         }
         String orderNumbers = strBuilder.toString();
 
-        ResponseEntity<String> exchange = restTemplate.exchange(URL + orderNumbers, HttpMethod.GET, null, new ParameterizedTypeReference<String>() {
+        return restTemplate.exchange(URL + orderNumbers, HttpMethod.GET, null, new ParameterizedTypeReference<String>() {
         });
-        return exchange;
     }
 }

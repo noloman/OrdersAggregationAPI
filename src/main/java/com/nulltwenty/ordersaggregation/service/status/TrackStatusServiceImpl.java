@@ -1,4 +1,4 @@
-package com.nulltwenty.ordersaggregation.service;
+package com.nulltwenty.ordersaggregation.service.status;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -7,15 +7,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-public class ShipmentProductsService {
-    private static final String URL = "http://127.0.0.1:4000/shipment-products?orderNumber=";
+public class TrackStatusServiceImpl implements TrackStatusService {
+    private final String URL = "http://127.0.0.1:4000/track-status?orderNumber=";
     private final RestTemplate restTemplate;
 
-    public ShipmentProductsService(RestTemplate restTemplate) {
+    public TrackStatusServiceImpl(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    public ResponseEntity<String> getShipmentProductsFromOrderNumber(int[] orderNumberArray) {
+    @Override
+    public ResponseEntity<String> getTrackStatusFromOrderNumber(int[] orderNumberArray) {
         StringBuilder strBuilder = new StringBuilder();
         for (int i = 0; i < orderNumberArray.length; i++) {
             if (i == orderNumberArray.length - 1) {

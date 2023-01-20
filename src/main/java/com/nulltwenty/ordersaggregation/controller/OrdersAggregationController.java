@@ -2,8 +2,8 @@ package com.nulltwenty.ordersaggregation.controller;
 
 import com.nulltwenty.ordersaggregation.model.AggregationResponse;
 import com.nulltwenty.ordersaggregation.model.TrackingStatusResponse;
-import com.nulltwenty.ordersaggregation.service.ShipmentProductsService;
-import com.nulltwenty.ordersaggregation.service.TrackStatusService;
+import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
+import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
@@ -17,12 +17,12 @@ import java.io.IOException;
 @RestController
 public class OrdersAggregationController {
     private static final Logger LOG = LoggerFactory.getLogger(OrdersAggregationController.class);
-    private final ShipmentProductsService shipmentProductsService;
-    private final TrackStatusService trackStatusService;
+    private final ShipmentService shipmentServiceImpl;
+    private final TrackStatusService trackStatusServiceImpl;
 
-    public OrdersAggregationController(ShipmentProductsService shipmentProductsService, TrackStatusService trackStatusService) {
-        this.shipmentProductsService = shipmentProductsService;
-        this.trackStatusService = trackStatusService;
+    public OrdersAggregationController(ShipmentService shipmentServiceImpl, TrackStatusService trackStatusServiceImpl) {
+        this.shipmentServiceImpl = shipmentServiceImpl;
+        this.trackStatusServiceImpl = trackStatusServiceImpl;
     }
 
     @GetMapping(value = "/aggregation")
@@ -38,7 +38,7 @@ public class OrdersAggregationController {
 
     private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
         try {
-            return shipmentProductsService.getShipmentProductsFromOrderNumber(shipmentsOrderNumbers);
+            return shipmentServiceImpl.getShipmentProducts(shipmentsOrderNumbers);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
         }
@@ -46,7 +46,7 @@ public class OrdersAggregationController {
 
     private ResponseEntity<String> getTrackStatus(int[] shipmentsOrderNumbers) {
         try {
-            return trackStatusService.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
+            return trackStatusServiceImpl.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
         }
