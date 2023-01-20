@@ -8,7 +8,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class ShipmentProductsService {
-    private final String URL = "http://127.0.0.1:4000/shipment-products?orderNumber=";
+    private static final String URL = "http://127.0.0.1:4000/shipment-products?orderNumber=";
     private final RestTemplate restTemplate;
 
     public ShipmentProductsService(RestTemplate restTemplate) {
@@ -21,7 +21,7 @@ public class ShipmentProductsService {
             if (i == orderNumberArray.length - 1) {
                 strBuilder.append(orderNumberArray[i]);
             } else {
-                strBuilder.append(orderNumberArray[i] + ",");
+                strBuilder.append(orderNumberArray[i]).append(",");
             }
         }
         String orderNumbers = strBuilder.toString();
