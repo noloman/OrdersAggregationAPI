@@ -1,5 +1,7 @@
 package com.nulltwenty.ordersaggregation.controller;
 
+import com.nulltwenty.ordersaggregation.model.AggregationResponse;
+import com.nulltwenty.ordersaggregation.model.TrackingStatusResponse;
 import com.nulltwenty.ordersaggregation.service.ShipmentProductsService;
 import com.nulltwenty.ordersaggregation.service.TrackStatusService;
 import org.slf4j.Logger;
@@ -24,10 +26,14 @@ public class OrdersAggregationController {
     }
 
     @GetMapping(value = "/aggregation")
-    public ResponseEntity<String> aggregation(@RequestParam int[] shipmentsOrderNumbers, @RequestParam int[] trackOrderNumbers, @RequestParam String[] pricingCountryCodes) throws IOException {
-        String shipmentOrderResponse = (String) getShipmentOrder(shipmentsOrderNumbers).getBody();
-        String trackStatusResponse = (String) getTrackStatus(shipmentsOrderNumbers).getBody();
-        return ResponseEntity.ok().body("");
+    public ResponseEntity<AggregationResponse> aggregation(@RequestParam int[] shipmentsOrderNumbers, @RequestParam int[] trackOrderNumbers, @RequestParam String[] pricingCountryCodes) throws IOException {
+        LOG.debug("Input", shipmentsOrderNumbers.toString(), shipmentsOrderNumbers, trackOrderNumbers, pricingCountryCodes);
+        String[] shipmentOrderResponse = new String[]{getShipmentOrder(shipmentsOrderNumbers).getBody().replaceAll("\"", "")};
+        String trackStatusResponseBody = getTrackStatus(shipmentsOrderNumbers).getBody().replaceAll("\"", "");
+        TrackingStatusResponse trackingStatusResponse = TrackingStatusResponse.valueOf(trackStatusResponseBody);
+
+        AggregationResponse response = new AggregationResponse();
+        return ResponseEntity.ok().body(response);
     }
 
     private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {

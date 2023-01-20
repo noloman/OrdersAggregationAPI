@@ -3,22 +3,22 @@ package com.nulltwenty.ordersaggregation.model;
 import com.fasterxml.jackson.annotation.*;
 
 public class AggregationResponse {
-    private Shipments shipments;
-    private Track track;
-    private Pricing pricing;
+    private ShipmentsResponse shipmentsResponse;
+    private TrackResponse trackResponse;
+    private PricingResponse pricingResponse;
 
     @JsonProperty("shipments")
-    public Shipments getShipments() { return shipments; }
+    public ShipmentsResponse getShipments() { return shipmentsResponse; }
     @JsonProperty("shipments")
-    public void setShipments(Shipments value) { this.shipments = value; }
+    public void setShipmentsResponse(ShipmentsResponse value) { this.shipmentsResponse = value; }
 
     @JsonProperty("track")
-    public Track getTrack() { return track; }
+    public TrackResponse getTrackResponse() { return trackResponse; }
     @JsonProperty("track")
-    public void setTrack(Track value) { this.track = value; }
+    public void setTrackResponse(TrackResponse value) { this.trackResponse = value; }
 
     @JsonProperty("pricing")
-    public Pricing getPricing() { return pricing; }
+    public PricingResponse getPricing() { return pricingResponse; }
     @JsonProperty("pricing")
-    public void setPricing(Pricing value) { this.pricing = value; }
+    public void setPricing(PricingResponse value) { this.pricingResponse = value; }
 }

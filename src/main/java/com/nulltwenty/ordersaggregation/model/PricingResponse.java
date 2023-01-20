@@ -2,7 +2,7 @@ package com.nulltwenty.ordersaggregation.model;
 
 import com.fasterxml.jackson.annotation.*;
 
-public class Pricing {
+public class PricingResponse {
     private double nl;
     private double cn;
 
