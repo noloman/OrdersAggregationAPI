@@ -17,12 +17,12 @@ import java.io.IOException;
 @RestController
 public class OrdersAggregationController {
     private static final Logger LOG = LoggerFactory.getLogger(OrdersAggregationController.class);
-    private final ShipmentService shipmentServiceImpl;
-    private final TrackStatusService trackStatusServiceImpl;
+    private final ShipmentService shipmentService;
+    private final TrackStatusService trackStatusService;
 
-    public OrdersAggregationController(ShipmentService shipmentServiceImpl, TrackStatusService trackStatusServiceImpl) {
-        this.shipmentServiceImpl = shipmentServiceImpl;
-        this.trackStatusServiceImpl = trackStatusServiceImpl;
+    public OrdersAggregationController(ShipmentService shipmentService, TrackStatusService trackStatusService) {
+        this.shipmentService = shipmentService;
+        this.trackStatusService = trackStatusService;
     }
 
     @GetMapping(value = "/aggregation")
@@ -38,7 +38,7 @@ public class OrdersAggregationController {
 
     private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
         try {
-            return shipmentServiceImpl.getShipmentProducts(shipmentsOrderNumbers);
+            return shipmentService.getShipmentProducts(shipmentsOrderNumbers);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
         }
@@ -46,7 +46,7 @@ public class OrdersAggregationController {
 
     private ResponseEntity<String> getTrackStatus(int[] shipmentsOrderNumbers) {
         try {
-            return trackStatusServiceImpl.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
+            return trackStatusService.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
         }
