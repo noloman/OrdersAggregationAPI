@@ -2,6 +2,8 @@ package com.nulltwenty.ordersaggregation.controller;
 
 import com.nulltwenty.ordersaggregation.service.ShipmentProductsService;
 import com.nulltwenty.ordersaggregation.service.TrackStatusService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +14,7 @@ import java.io.IOException;
 
 @RestController
 public class OrdersAggregationController {
+    private static final Logger LOG = LoggerFactory.getLogger(OrdersAggregationController.class);
     private final ShipmentProductsService shipmentProductsService;
     private final TrackStatusService trackStatusService;
 
