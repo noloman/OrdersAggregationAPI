@@ -1,6 +1,7 @@
 package com.nulltwenty.ordersaggregation.controller;
 
 import com.nulltwenty.ordersaggregation.model.AggregationResponse;
+import com.nulltwenty.ordersaggregation.model.ShipmentsResponse;
 import com.nulltwenty.ordersaggregation.model.TrackingStatusResponse;
 import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 public class OrdersAggregationController {
@@ -38,7 +41,16 @@ public class OrdersAggregationController {
 
     private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
         try {
-            return shipmentService.getShipmentProducts(shipmentsOrderNumbers);
+            ShipmentsResponse shipmentsResponse = new ShipmentsResponse();
+            List<String> shipmentStatusList = new ArrayList<>();
+            for (int i = 0; i < shipmentsOrderNumbers.length - 1; i++) {
+                int shipmentsOrderNumber = shipmentsOrderNumbers[i];
+                String response = shipmentService.getShipmentProducts(shipmentsOrderNumber).getBody();
+                shipmentsResponse.setNumber(String.valueOf(shipmentsOrderNumber));
+                shipmentStatusList.add(response);
+            }
+            shipmentsResponse.setShipmentStatus(shipmentStatusList);
+            return ResponseEntity.ok().body(shipmentsResponse.toString());
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
         }
