@@ -30,21 +30,19 @@ public class OrdersAggregationController {
         return ResponseEntity.ok().body("");
     }
 
-    private ResponseEntity getShipmentOrder(int[] shipmentsOrderNumbers) {
+    private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
         try {
-            ResponseEntity<String> result = shipmentProductsService.getShipmentProductsFromOrderNumber(shipmentsOrderNumbers);
-            return result;
+            return shipmentProductsService.getShipmentProductsFromOrderNumber(shipmentsOrderNumbers);
         } catch (Exception e) {
-            return new ResponseEntity(e.getMessage(), HttpStatusCode.valueOf(500));
+            return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
         }
     }
 
-    private ResponseEntity getTrackStatus(int[] shipmentsOrderNumbers) {
+    private ResponseEntity<String> getTrackStatus(int[] shipmentsOrderNumbers) {
         try {
-            ResponseEntity<String> result = trackStatusService.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
-            return result;
+            return trackStatusService.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
         } catch (Exception e) {
-            return new ResponseEntity(e.getMessage(), HttpStatusCode.valueOf(500));
+            return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
         }
     }
 }
