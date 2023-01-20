@@ -1,6 +1,6 @@
 # Default ignored files
 /shelf/
-/workspace.xml
+/.idea/workspace.xml
 # Created by https://www.toptal.com/developers/gitignore/api/jetbrains+all,jetbrains,jetbrains+iml,intellij,intellij+all,intellij+iml,java,maven
 # Edit at https://www.toptal.com/developers/gitignore?templates=jetbrains+all,jetbrains,jetbrains+iml,intellij,intellij+all,intellij+iml,java,maven
 
