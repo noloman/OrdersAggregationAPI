@@ -52,7 +52,7 @@ public class OrdersAggregationController {
             shipmentsResponse.setShipmentStatus(shipmentStatusList);
             return ResponseEntity.ok().body(shipmentsResponse.toString());
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
+            return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
         }
     }
 
@@ -60,7 +60,7 @@ public class OrdersAggregationController {
         try {
             return trackStatusService.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(500));
+            return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
         }
     }
 }
