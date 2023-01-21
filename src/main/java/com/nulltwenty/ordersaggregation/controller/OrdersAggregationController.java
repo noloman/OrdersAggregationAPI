@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
 import com.nulltwenty.ordersaggregation.model.TrackResponse;
 import com.nulltwenty.ordersaggregation.serializer.TrackResponseSerializer;
+import com.nulltwenty.ordersaggregation.service.pricing.PricingService;
 import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,10 +30,12 @@ public class OrdersAggregationController {
     private static final Logger LOG = LoggerFactory.getLogger(OrdersAggregationController.class);
     private final ShipmentService shipmentService;
     private final TrackStatusService trackStatusService;
+    private final PricingService pricingService;
 
-    public OrdersAggregationController(ShipmentService shipmentService, TrackStatusService trackStatusService) {
+    public OrdersAggregationController(ShipmentService shipmentService, TrackStatusService trackStatusService, PricingService pricingService) {
         this.shipmentService = shipmentService;
         this.trackStatusService = trackStatusService;
+        this.pricingService = pricingService;
     }
 
     @GetMapping(value = "/aggregation")
@@ -40,7 +45,8 @@ public class OrdersAggregationController {
         AggregatedResponse aggregatedResponse = new AggregatedResponse();
 
         String shipmentOrderResponse = getShipmentOrder(shipmentsOrderNumbers).getBody();
-        String trackStatusResponseBody = getTrackStatus(shipmentsOrderNumbers).getBody();
+        String trackStatusResponseBody = getTrackStatus(trackOrderNumbers).getBody();
+        String pricingResponseBody = getPricing(pricingCountryCodes).getBody();
 
         ObjectMapper mapper = new ObjectMapper();
         TypeReference<HashMap<String, Object>> typeReference = new TypeReference<>() {
@@ -57,7 +63,33 @@ public class OrdersAggregationController {
         for (Map.Entry<String, Object> entry : shipmentOrderResponseData.entrySet()) {
             aggregatedResponse.setShipments(entry.getKey(), entry.getValue());
         }
+
+        mapper = new ObjectMapper();
+        TypeReference<HashMap<String, Object>> pricingResponseTypeReference = new TypeReference<>() {
+        };
+        Map<String, Object> pricingResponseData = mapper.readValue(pricingResponseBody, pricingResponseTypeReference);
+        for (Map.Entry<String, Object> entry : pricingResponseData.entrySet()) {
+            aggregatedResponse.setPricing(entry.getKey(), entry.getValue());
+        }
         return ResponseEntity.ok().body(new ObjectMapper().writeValueAsString(aggregatedResponse));
+    }
+
+    private HttpEntity<String> getPricing(String[] countryCodes) {
+        try {
+            Map<String, Double> map = new HashMap<>();
+            for (int i = 0; i < countryCodes.length; i++) {
+                String countryCode = countryCodes[i];
+                BigDecimal price = pricingService.getPricing(countryCode).getBody();
+                map.put(countryCode, price.doubleValue());
+            }
+            JSONObject returnValue = new JSONObject();
+            for (Map.Entry<String, Double> priceLine : map.entrySet()) {
+                returnValue.put(priceLine.getKey(), priceLine.getValue());
+            }
+            return ResponseEntity.ok().body(returnValue.toString());
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
+        }
     }
 
     private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {

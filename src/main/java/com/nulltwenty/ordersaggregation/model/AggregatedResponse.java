@@ -8,7 +8,7 @@ import java.util.Map;
 public class AggregatedResponse {
     private final Map<String, Object> track = new HashMap<>();
     private final Map<String, Object> shipments = new HashMap<>();
-    private PricingResponse pricing;
+    private final Map<String, Object> pricing = new HashMap<>();
 
     public Map<String, Object> getTrack() {
         return track;
@@ -28,11 +28,12 @@ public class AggregatedResponse {
         shipments.put(name, value);
     }
 
-    public PricingResponse getPricing() {
+    public Map<String, Object> getPricing() {
         return pricing;
     }
 
-    public void setPricing(PricingResponse value) {
-        this.pricing = value;
+    @JsonAnySetter
+    public void setPricing(String name, Object value) {
+        pricing.put(name, value);
     }
 }
