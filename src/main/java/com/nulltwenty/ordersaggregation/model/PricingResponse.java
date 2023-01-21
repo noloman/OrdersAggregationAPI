@@ -1,18 +1,24 @@
 package com.nulltwenty.ordersaggregation.model;
 
-import com.fasterxml.jackson.annotation.*;
+import java.math.BigDecimal;
 
 public class PricingResponse {
-    private double nl;
-    private double cn;
+    private String countryCode;
+    private BigDecimal price;
 
-    @JsonProperty("NL")
-    public double getNl() { return nl; }
-    @JsonProperty("NL")
-    public void setNl(double value) { this.nl = value; }
+    public String getCountryCode() {
+        return countryCode;
+    }
 
-    @JsonProperty("CN")
-    public double getCN() { return cn; }
-    @JsonProperty("CN")
-    public void setCN(double value) { this.cn = value; }
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
 }

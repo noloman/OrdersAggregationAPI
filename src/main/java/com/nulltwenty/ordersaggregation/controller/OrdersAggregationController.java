@@ -1,10 +1,14 @@
 package com.nulltwenty.ordersaggregation.controller;
 
-import com.nulltwenty.ordersaggregation.model.AggregationResponse;
-import com.nulltwenty.ordersaggregation.model.ShipmentsResponse;
-import com.nulltwenty.ordersaggregation.model.TrackingStatusResponse;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
+import com.nulltwenty.ordersaggregation.model.TrackResponse;
+import com.nulltwenty.ordersaggregation.serializer.TrackResponseSerializer;
 import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
@@ -14,8 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 public class OrdersAggregationController {
@@ -29,36 +34,64 @@ public class OrdersAggregationController {
     }
 
     @GetMapping(value = "/aggregation")
-    public ResponseEntity<AggregationResponse> aggregation(@RequestParam int[] shipmentsOrderNumbers, @RequestParam int[] trackOrderNumbers, @RequestParam String[] pricingCountryCodes) throws IOException {
+    public ResponseEntity<String> aggregation(@RequestParam int[] shipmentsOrderNumbers, @RequestParam int[] trackOrderNumbers, @RequestParam String[] pricingCountryCodes) throws IOException {
         LOG.debug("Input", shipmentsOrderNumbers.toString(), shipmentsOrderNumbers, trackOrderNumbers, pricingCountryCodes);
-        String[] shipmentOrderResponse = new String[]{getShipmentOrder(shipmentsOrderNumbers).getBody().replaceAll("\"", "")};
-        String trackStatusResponseBody = getTrackStatus(shipmentsOrderNumbers).getBody().replaceAll("\"", "");
-        TrackingStatusResponse trackingStatusResponse = TrackingStatusResponse.valueOf(trackStatusResponseBody);
 
-        AggregationResponse response = new AggregationResponse();
-        return ResponseEntity.ok().body(response);
+        AggregatedResponse aggregatedResponse = new AggregatedResponse();
+
+        String shipmentOrderResponse = getShipmentOrder(shipmentsOrderNumbers).getBody();
+        String trackStatusResponseBody = getTrackStatus(shipmentsOrderNumbers).getBody();
+
+        ObjectMapper mapper = new ObjectMapper();
+        TypeReference<HashMap<String, Object>> typeReference = new TypeReference<>() {
+        };
+        Map<String, Object> data = mapper.readValue(trackStatusResponseBody, typeReference);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            aggregatedResponse.setTrack(entry.getKey(), entry.getValue());
+        }
+
+        mapper = new ObjectMapper();
+        TypeReference<HashMap<String, Object>> shipmentOrderResponseTypeReference = new TypeReference<>() {
+        };
+        Map<String, Object> shipmentOrderResponseData = mapper.readValue(shipmentOrderResponse, shipmentOrderResponseTypeReference);
+        for (Map.Entry<String, Object> entry : shipmentOrderResponseData.entrySet()) {
+            aggregatedResponse.setShipments(entry.getKey(), entry.getValue());
+        }
+        return ResponseEntity.ok().body(new ObjectMapper().writeValueAsString(aggregatedResponse));
     }
 
     private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
         try {
-            ShipmentsResponse shipmentsResponse = new ShipmentsResponse();
-            List<String> shipmentStatusList = new ArrayList<>();
-            for (int i = 0; i < shipmentsOrderNumbers.length - 1; i++) {
+            Map<String, String> map = new HashMap<>();
+            for (int i = 0; i < shipmentsOrderNumbers.length; i++) {
                 int shipmentsOrderNumber = shipmentsOrderNumbers[i];
-                String response = shipmentService.getShipmentProducts(shipmentsOrderNumber).getBody();
-                shipmentsResponse.setNumber(String.valueOf(shipmentsOrderNumber));
-                shipmentStatusList.add(response);
+                String[] response = shipmentService.getShipmentProducts(shipmentsOrderNumber).getBody();
+                map.put(String.valueOf(shipmentsOrderNumber), Arrays.toString(Arrays.stream(response).toArray()));
             }
-            shipmentsResponse.setShipmentStatus(shipmentStatusList);
-            return ResponseEntity.ok().body(shipmentsResponse.toString());
+            JSONObject returnValue = new JSONObject();
+            for (Map.Entry<String, String> trackLine : map.entrySet()) {
+                returnValue.put(trackLine.getKey(), trackLine.getValue());
+            }
+            return ResponseEntity.ok().body(returnValue.toString());
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
         }
     }
 
-    private ResponseEntity<String> getTrackStatus(int[] shipmentsOrderNumbers) {
+    private ResponseEntity<String> getTrackStatus(int[] trackOrderNumbers) {
         try {
-            return trackStatusService.getTrackStatusFromOrderNumber(shipmentsOrderNumbers);
+            TrackResponse trackResponse = new TrackResponse();
+            for (int i = 0; i < trackOrderNumbers.length - 1; i++) {
+                int trackOrderNumber = trackOrderNumbers[i];
+                String response = trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber).getBody();
+                trackResponse.number = String.valueOf(trackOrderNumber);
+                trackResponse.value = response;
+            }
+            ObjectMapper objectMapper = new ObjectMapper();
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(TrackResponse.class, new TrackResponseSerializer());
+            objectMapper.registerModule(module);
+            return ResponseEntity.ok().body(objectMapper.writeValueAsString(trackResponse));
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
         }

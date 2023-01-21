@@ -16,8 +16,8 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     @Override
-    public ResponseEntity<String> getShipmentProducts(int orderNumber) {
-        return restTemplate.exchange(URL + orderNumber, HttpMethod.GET, null, new ParameterizedTypeReference<String>() {
+    public ResponseEntity<String[]> getShipmentProducts(int orderNumber) {
+        return restTemplate.exchange(URL + orderNumber, HttpMethod.GET, null, new ParameterizedTypeReference<String[]>() {
         });
     }
 }

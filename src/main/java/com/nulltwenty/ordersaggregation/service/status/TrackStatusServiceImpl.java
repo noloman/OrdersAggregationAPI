@@ -16,18 +16,8 @@ public class TrackStatusServiceImpl implements TrackStatusService {
     }
 
     @Override
-    public ResponseEntity<String> getTrackStatusFromOrderNumber(int[] orderNumberArray) {
-        StringBuilder strBuilder = new StringBuilder();
-        for (int i = 0; i < orderNumberArray.length; i++) {
-            if (i == orderNumberArray.length - 1) {
-                strBuilder.append(orderNumberArray[i]);
-            } else {
-                strBuilder.append(orderNumberArray[i]).append(",");
-            }
-        }
-        String orderNumbers = strBuilder.toString();
-
-        return restTemplate.exchange(URL + orderNumbers, HttpMethod.GET, null, new ParameterizedTypeReference<String>() {
+    public ResponseEntity<String> getTrackStatusFromOrderNumber(int orderNumber) {
+        return restTemplate.exchange(URL + orderNumber, HttpMethod.GET, null, new ParameterizedTypeReference<String>() {
         });
     }
 }
