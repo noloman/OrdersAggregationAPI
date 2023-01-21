@@ -1,5 +1,6 @@
 package com.nulltwenty.ordersaggregation.service.pricing;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -11,11 +12,8 @@ import java.math.BigDecimal;
 @Service
 public class PricingServiceImpl implements PricingService {
     private static final String URL = "http://127.0.0.1:4000/pricing?countryCode=";
-    private final RestTemplate restTemplate;
-
-    public PricingServiceImpl(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
+    @Autowired
+    RestTemplate restTemplate;
 
     @Override
     public ResponseEntity<BigDecimal> getPricing(String countryCode) {
