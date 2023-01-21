@@ -2,10 +2,7 @@ package com.nulltwenty.ordersaggregation.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
-import com.nulltwenty.ordersaggregation.model.TrackResponse;
-import com.nulltwenty.ordersaggregation.serializer.TrackResponseSerializer;
 import com.nulltwenty.ordersaggregation.service.pricing.PricingService;
 import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
@@ -112,18 +109,17 @@ public class OrdersAggregationController {
 
     private ResponseEntity<String> getTrackStatus(int[] trackOrderNumbers) {
         try {
-            TrackResponse trackResponse = new TrackResponse();
-            for (int i = 0; i < trackOrderNumbers.length - 1; i++) {
+            Map<String, String> map = new HashMap<>();
+            for (int i = 0; i < trackOrderNumbers.length; i++) {
                 int trackOrderNumber = trackOrderNumbers[i];
-                String response = trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber).getBody();
-                trackResponse.number = String.valueOf(trackOrderNumber);
-                trackResponse.value = response;
+                String response = trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber).getBody().replaceAll("\"", "");
+                map.put(String.valueOf(trackOrderNumber), response);
             }
-            ObjectMapper objectMapper = new ObjectMapper();
-            SimpleModule module = new SimpleModule();
-            module.addSerializer(TrackResponse.class, new TrackResponseSerializer());
-            objectMapper.registerModule(module);
-            return ResponseEntity.ok().body(objectMapper.writeValueAsString(trackResponse));
+            JSONObject returnValue = new JSONObject();
+            for (Map.Entry<String, String> trackLine : map.entrySet()) {
+                returnValue.put(trackLine.getKey(), trackLine.getValue());
+            }
+            return ResponseEntity.ok().body(returnValue.toString());
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
         }
