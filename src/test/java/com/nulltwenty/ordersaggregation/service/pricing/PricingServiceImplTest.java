@@ -49,7 +49,7 @@ public class PricingServiceImplTest {
 
     @Test
     public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnTheSame() {
-        String serviceUnavailableResponse = "{\"503\" : \"service: unavailable\"}";
+        String serviceUnavailableResponse = "\"503 : \"{\"message\":\"service unavailable\"}";
         Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class))).thenReturn(new ResponseEntity<>(serviceUnavailableResponse, HttpStatus.SERVICE_UNAVAILABLE));
 
         ResponseEntity<String> serviceResponse = pricingService.getPricing(countryCode);
