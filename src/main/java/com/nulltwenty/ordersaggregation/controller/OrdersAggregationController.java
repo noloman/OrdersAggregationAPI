@@ -140,7 +140,7 @@ public class OrdersAggregationController {
                 for (int trackOrderNumber : trackOrderNumbers) {
                     ResponseEntity<String> response = Objects.requireNonNull(trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber));
                     if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
-                        map.put(String.valueOf(trackOrderNumber), response.getBody());
+                        map.put(String.valueOf(trackOrderNumber), Objects.requireNonNull(response.getBody()).replaceAll("\"", ""));
                     } else {
                         return response;
                     }
