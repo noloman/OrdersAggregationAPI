@@ -6,6 +6,7 @@ import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
 import com.nulltwenty.ordersaggregation.service.pricing.PricingService;
 import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 public class OrdersAggregationController {
@@ -47,29 +48,28 @@ public class OrdersAggregationController {
         }
 
         mapper = new ObjectMapper();
-        TypeReference<HashMap<String, Object>> shipmentOrderResponseTypeReference = new TypeReference<>() {
+        typeReference = new TypeReference<>() {
         };
-        Map<String, Object> shipmentOrderResponseData = mapper.readValue(shipmentOrderResponse, shipmentOrderResponseTypeReference);
-        for (Map.Entry<String, Object> entry : shipmentOrderResponseData.entrySet()) {
+        data = mapper.readValue(shipmentOrderResponse, typeReference);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
             aggregatedResponse.setShipments(entry.getKey(), entry.getValue());
         }
 
         mapper = new ObjectMapper();
-        TypeReference<HashMap<String, Object>> pricingResponseTypeReference = new TypeReference<>() {
+        typeReference = new TypeReference<>() {
         };
-        Map<String, Object> pricingResponseData = mapper.readValue(pricingResponseBody, pricingResponseTypeReference);
-        for (Map.Entry<String, Object> entry : pricingResponseData.entrySet()) {
+        data = mapper.readValue(pricingResponseBody, typeReference);
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
             aggregatedResponse.setPricing(entry.getKey(), entry.getValue());
         }
-        return ResponseEntity.ok().body(new ObjectMapper().writeValueAsString(aggregatedResponse));
+        return ResponseEntity.ok().body(mapper.writeValueAsString(aggregatedResponse));
     }
 
     private HttpEntity<String> getPricing(String[] countryCodes) {
         if (countryCodes != null) {
             try {
                 Map<String, Double> map = new HashMap<>();
-                for (int i = 0; i < countryCodes.length; i++) {
-                    String countryCode = countryCodes[i];
+                for (String countryCode : countryCodes) {
                     String price = pricingService.getPricing(countryCode).getBody();
                     map.put(countryCode, Double.parseDouble(price));
                 }
@@ -89,15 +89,18 @@ public class OrdersAggregationController {
     private ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
         if (shipmentsOrderNumbers != null) {
             try {
-                Map<String, String> map = new HashMap<>();
-                for (int i = 0; i < shipmentsOrderNumbers.length; i++) {
-                    int shipmentsOrderNumber = shipmentsOrderNumbers[i];
+                Map<String, String[]> map = new HashMap<>();
+                for (int shipmentsOrderNumber : shipmentsOrderNumbers) {
                     String[] response = shipmentService.getShipmentProducts(shipmentsOrderNumber).getBody();
-                    map.put(String.valueOf(shipmentsOrderNumber), Arrays.toString(Arrays.stream(response).toArray()));
+                    map.put(String.valueOf(shipmentsOrderNumber), response);
                 }
                 JSONObject returnValue = new JSONObject();
-                for (Map.Entry<String, String> trackLine : map.entrySet()) {
-                    returnValue.put(trackLine.getKey(), trackLine.getValue());
+                for (Map.Entry<String, String[]> trackLine : map.entrySet()) {
+                    JSONArray shipmentArray = new JSONArray();
+                    for (String packagingValue : trackLine.getValue()) {
+                        shipmentArray.put(packagingValue);
+                    }
+                    returnValue.put(trackLine.getKey(), shipmentArray);
                 }
                 return ResponseEntity.ok().body(returnValue.toString());
             } catch (Exception e) {
@@ -112,9 +115,8 @@ public class OrdersAggregationController {
         if (trackOrderNumbers != null) {
             try {
                 Map<String, String> map = new HashMap<>();
-                for (int i = 0; i < trackOrderNumbers.length; i++) {
-                    int trackOrderNumber = trackOrderNumbers[i];
-                    String response = trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber).getBody().replaceAll("\"", "");
+                for (int trackOrderNumber : trackOrderNumbers) {
+                    String response = Objects.requireNonNull(trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber).getBody()).replaceAll("\"", "");
                     map.put(String.valueOf(trackOrderNumber), response);
                 }
                 JSONObject returnValue = new JSONObject();

@@ -49,13 +49,27 @@ class OrdersAggregationControllerTest {
     }
 
     @Test
+    void givenAnAggregationEndPoint_whenTheRequestHasNoPricingCountryCode_itShouldReturnAnEmptyPricingAggregationResponseJson() throws Exception {
+        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
+        when(trackStatusService.getTrackStatusFromOrderNumber(eq(987654321))).thenReturn(ResponseEntity.ok("DELIVERING"));
+        when(shipmentService.getShipmentProducts(eq(987654321))).thenReturn(ResponseEntity.ok(new String[]{"BOX", "BOX", "PALLET"}));
+        when(shipmentService.getShipmentProducts(eq(123456789))).thenReturn(ResponseEntity.ok(new String[]{"ENVELOP", "BOX", "ENVELOP", "PALLET"}));
+
+        MockHttpServletResponse response = mvc.perform(get("/aggregation?shipmentsOrderNumbers=987654321,123456789&trackOrderNumbers=987654321,123456789").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
+        assertNotNull(response);
+
+        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\",\"987654321\":\"DELIVERING\"},\"shipments\":{\"123456789\":[\"ENVELOP\",\"BOX\",\"ENVELOP\",\"PALLET\"],\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]},\"pricing\":{}}";
+        assertEquals(expectedResponse, response.getContentAsString());
+    }
+
+    @Test
     void givenAnAggregationEndPoint_whenTheRequestHasNoShipmentsOrderNumber_itShouldReturnAnEmptyShipmentsAggregationResponseJson() throws Exception {
         when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
         when(trackStatusService.getTrackStatusFromOrderNumber(eq(987654321))).thenReturn(ResponseEntity.ok("DELIVERING"));
         when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
         when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.ok("5.552640023717359"));
 
-        MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=987654321,123456789&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
+        MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=987654321,123456789&&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
 
         String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\",\"987654321\":\"DELIVERING\"},\"shipments\":{},\"pricing\":{\"CN\":5.552640023717359,\"NL\":20.388832257336986}}";
