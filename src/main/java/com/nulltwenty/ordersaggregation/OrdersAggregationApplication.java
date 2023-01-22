@@ -5,8 +5,7 @@ import com.nulltwenty.ordersaggregation.serializer.TrackResponseSerializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
@@ -15,11 +14,6 @@ public class OrdersAggregationApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(OrdersAggregationApplication.class, args);
-    }
-
-    @Bean
-    RestTemplate restTemplate() {
-        return new RestTemplate(clientHttpRequestFactory());
     }
 
     @Bean
@@ -33,10 +27,10 @@ public class OrdersAggregationApplication {
     }
 
     @Bean
-    ClientHttpRequestFactory clientHttpRequestFactory() {
-        HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();
-        clientHttpRequestFactory.setConnectTimeout(DEFAULT_TIMEOUT);
-        clientHttpRequestFactory.setConnectionRequestTimeout(DEFAULT_TIMEOUT);
-        return clientHttpRequestFactory;
+    RestTemplate restTemplateTimeoutWithRequestFactory() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(DEFAULT_TIMEOUT);
+        requestFactory.setReadTimeout(DEFAULT_TIMEOUT);
+        return new RestTemplate(requestFactory);
     }
 }
