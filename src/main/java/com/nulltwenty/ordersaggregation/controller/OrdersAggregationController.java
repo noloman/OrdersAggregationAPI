@@ -8,6 +8,7 @@ import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +23,12 @@ import java.util.Map;
 
 @RestController
 public class OrdersAggregationController {
-    private final ShipmentService shipmentService;
-    private final TrackStatusService trackStatusService;
-    private final PricingService pricingService;
-
-    public OrdersAggregationController(ShipmentService shipmentService, TrackStatusService trackStatusService, PricingService pricingService) {
-        this.shipmentService = shipmentService;
-        this.trackStatusService = trackStatusService;
-        this.pricingService = pricingService;
-    }
+    @Autowired
+    private ShipmentService shipmentService;
+    @Autowired
+    private TrackStatusService trackStatusService;
+    @Autowired
+    private PricingService pricingService;
 
     @GetMapping(value = "/aggregation")
     public ResponseEntity<String> aggregation(@RequestParam(required = false) int[] shipmentsOrderNumbers, @RequestParam(required = false) int[] trackOrderNumbers, @RequestParam(required = false) String[] pricingCountryCodes) throws IOException, JSONException {

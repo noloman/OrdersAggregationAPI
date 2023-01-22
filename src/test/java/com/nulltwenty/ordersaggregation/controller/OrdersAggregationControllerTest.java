@@ -1,19 +1,64 @@
 package com.nulltwenty.ordersaggregation.controller;
 
+import com.nulltwenty.ordersaggregation.service.pricing.PricingService;
+import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
+import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureWebTestClient
 class OrdersAggregationControllerTest {
-    @Autowired
-    private WebTestClient webClient;
+    private MockMvc mvc;
+    @InjectMocks
+    private OrdersAggregationController ordersAggregationController;
+    @Mock
+    private ShipmentService shipmentService;
+    @Mock
+    private TrackStatusService trackStatusService;
+    @Mock
+    private PricingService pricingService;
+
+    @BeforeEach
+    void setup() {
+        mvc = MockMvcBuilders.standaloneSetup(ordersAggregationController).build();
+    }
 
     @Test
-    void givenAnAggregationEndPoint_whenTheRequestHasNoParams_itShouldReturnAnEmptyAggregationResponseJson() {
-        webClient.get().uri("/aggregation").exchange().expectStatus().isOk().expectBody(String.class).isEqualTo("{\"track\":{},\"shipments\":{},\"pricing\":{}}");
+    void givenAnAggregationEndPoint_whenTheRequestHasNoParams_itShouldReturnAnEmptyAggregationResponseJson() throws Exception {
+        String expectedResponse = "{\"track\":{},\"shipments\":{},\"pricing\":{}}";
+        MockHttpServletResponse response = mvc.perform(get("/aggregation").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
+
+        assertNotNull(response);
+        assertEquals(expectedResponse, response.getContentAsString());
+    }
+
+    @Test
+    void givenAnAggregationEndPoint_whenTheRequestHasNoShipmentsOrderNumber_itShouldReturnAnEmptyShipmentsAggregationResponseJson() throws Exception {
+        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
+        when(trackStatusService.getTrackStatusFromOrderNumber(eq(987654321))).thenReturn(ResponseEntity.ok("DELIVERING"));
+        when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
+        when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.ok("5.552640023717359"));
+
+        MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=987654321,123456789&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
+        assertNotNull(response);
+
+        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\",\"987654321\":\"DELIVERING\"},\"shipments\":{},\"pricing\":{\"CN\":5.552640023717359,\"NL\":20.388832257336986}}";
+        assertEquals(expectedResponse, response.getContentAsString());
     }
 }
