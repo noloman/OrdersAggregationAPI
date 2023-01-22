@@ -1,5 +1,6 @@
 package com.nulltwenty.ordersaggregation.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
@@ -33,36 +34,35 @@ public class OrdersAggregationController {
 
     @GetMapping(value = "/aggregation")
     public ResponseEntity<String> aggregation(@RequestParam(required = false) int[] shipmentsOrderNumbers, @RequestParam(required = false) int[] trackOrderNumbers, @RequestParam(required = false) String[] pricingCountryCodes) throws IOException, JSONException {
-        AggregatedResponse aggregatedResponse = new AggregatedResponse();
-
         String shipmentOrderResponse = getShipmentOrder(shipmentsOrderNumbers).getBody();
         String trackStatusResponseBody = getTrackStatus(trackOrderNumbers).getBody();
         String pricingResponseBody = getPricing(pricingCountryCodes).getBody();
 
+        return ResponseEntity.ok().body(createAggregatedResponseAsJson(shipmentOrderResponse, trackStatusResponseBody, pricingResponseBody));
+    }
+
+    private String createAggregatedResponseAsJson(String shipmentOrderResponse, String trackStatusResponseBody, String pricingResponseBody) throws JsonProcessingException {
+        AggregatedResponse aggregatedResponse = new AggregatedResponse();
+
         ObjectMapper mapper = new ObjectMapper();
         TypeReference<HashMap<String, Object>> typeReference = new TypeReference<>() {
         };
+
         Map<String, Object> data = mapper.readValue(trackStatusResponseBody, typeReference);
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             aggregatedResponse.setTrack(entry.getKey(), entry.getValue());
         }
 
-        mapper = new ObjectMapper();
-        typeReference = new TypeReference<>() {
-        };
         data = mapper.readValue(shipmentOrderResponse, typeReference);
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             aggregatedResponse.setShipments(entry.getKey(), entry.getValue());
         }
 
-        mapper = new ObjectMapper();
-        typeReference = new TypeReference<>() {
-        };
         data = mapper.readValue(pricingResponseBody, typeReference);
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             aggregatedResponse.setPricing(entry.getKey(), entry.getValue());
         }
-        return ResponseEntity.ok().body(mapper.writeValueAsString(aggregatedResponse));
+        return mapper.writeValueAsString(aggregatedResponse);
     }
 
     private HttpEntity<String> getPricing(String[] countryCodes) {
