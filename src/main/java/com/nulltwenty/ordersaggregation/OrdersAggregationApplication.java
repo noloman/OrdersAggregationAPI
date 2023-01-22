@@ -1,7 +1,5 @@
 package com.nulltwenty.ordersaggregation;
 
-import com.nulltwenty.ordersaggregation.serializer.AggregatedResponseSerializer;
-import com.nulltwenty.ordersaggregation.serializer.TrackResponseSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -16,16 +14,6 @@ public class OrdersAggregationApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(OrdersAggregationApplication.class, args);
-    }
-
-    @Bean
-    TrackResponseSerializer trackResponseSerializer() {
-        return new TrackResponseSerializer();
-    }
-
-    @Bean
-    AggregatedResponseSerializer aggregatedResponseSerializer() {
-        return new AggregatedResponseSerializer();
     }
 
     @Bean
