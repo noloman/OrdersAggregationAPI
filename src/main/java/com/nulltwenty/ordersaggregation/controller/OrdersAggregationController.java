@@ -85,8 +85,12 @@ public class OrdersAggregationController {
             try {
                 Map<String, Double> map = new HashMap<>();
                 for (String countryCode : countryCodes) {
-                    String price = pricingService.getPricing(countryCode).getBody();
-                    map.put(countryCode, Double.parseDouble(price));
+                    ResponseEntity<String> responseEntity = pricingService.getPricing(countryCode);
+                    if (responseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+                        map.put(countryCode, Double.parseDouble(Objects.requireNonNull(responseEntity.getBody())));
+                    } else {
+                        return responseEntity;
+                    }
                 }
                 JSONObject returnValue = new JSONObject();
                 for (Map.Entry<String, Double> priceLine : map.entrySet()) {
@@ -106,8 +110,12 @@ public class OrdersAggregationController {
             try {
                 Map<String, String[]> map = new HashMap<>();
                 for (int shipmentsOrderNumber : shipmentsOrderNumbers) {
-                    String[] response = shipmentService.getShipmentProducts(shipmentsOrderNumber).getBody();
-                    map.put(String.valueOf(shipmentsOrderNumber), response);
+                    ResponseEntity<String[]> response = shipmentService.getShipmentProducts(shipmentsOrderNumber);
+                    if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+                        map.put(String.valueOf(shipmentsOrderNumber), response.getBody());
+                    } else {
+                        return new ResponseEntity<>(Objects.requireNonNull(response.getBody()).toString(), HttpStatus.SERVICE_UNAVAILABLE);
+                    }
                 }
                 JSONObject returnValue = new JSONObject();
                 for (Map.Entry<String, String[]> trackLine : map.entrySet()) {
@@ -131,8 +139,12 @@ public class OrdersAggregationController {
             try {
                 Map<String, String> map = new HashMap<>();
                 for (int trackOrderNumber : trackOrderNumbers) {
-                    String response = Objects.requireNonNull(trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber).getBody()).replaceAll("\"", "");
-                    map.put(String.valueOf(trackOrderNumber), response);
+                    ResponseEntity<String> response = Objects.requireNonNull(trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber));
+                    if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+                        map.put(String.valueOf(trackOrderNumber), response.getBody());
+                    } else {
+                        return response;
+                    }
                 }
                 JSONObject returnValue = new JSONObject();
                 for (Map.Entry<String, String> trackLine : map.entrySet()) {
