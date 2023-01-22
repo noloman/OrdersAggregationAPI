@@ -16,7 +16,7 @@ public class TrackStatusServiceImpl implements TrackStatusService {
 
     @Override
     public ResponseEntity<String> getTrackStatusFromOrderNumber(int orderNumber) {
-        return restTemplate.exchange(URL + orderNumber, HttpMethod.GET, null, new ParameterizedTypeReference<String>() {
+        return restTemplate.exchange(URL + orderNumber, HttpMethod.GET, null, new ParameterizedTypeReference<>() {
         });
     }
 }
