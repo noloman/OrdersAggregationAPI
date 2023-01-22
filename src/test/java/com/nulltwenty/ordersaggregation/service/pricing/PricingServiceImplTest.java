@@ -2,10 +2,10 @@ package com.nulltwenty.ordersaggregation.service.pricing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nulltwenty.ordersaggregation.model.PricingResponse;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -23,15 +23,11 @@ import static org.mockito.ArgumentMatchers.eq;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PricingServiceImplTest {
-    private final PricingServiceImpl pricingService = new PricingServiceImpl();
+    @InjectMocks
+    private final PricingService pricingService = new PricingServiceImpl();
     private final String countryCode = "NL";
     @Mock
     private RestTemplate restTemplate;
-
-    @Before
-    public void setUp() {
-        pricingService.setRestTemplate(restTemplate);
-    }
 
     @Test
     public void givenARestTemplate_whenItReturns200OK_theServiceShouldReturnTheSame() throws JsonProcessingException {
