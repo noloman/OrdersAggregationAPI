@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,8 +75,8 @@ public class OrdersAggregationController {
             Map<String, Double> map = new HashMap<>();
             for (int i = 0; i < countryCodes.length; i++) {
                 String countryCode = countryCodes[i];
-                BigDecimal price = pricingService.getPricing(countryCode).getBody();
-                map.put(countryCode, price.doubleValue());
+                String price = pricingService.getPricing(countryCode).getBody();
+                map.put(countryCode, Double.parseDouble(price));
             }
             JSONObject returnValue = new JSONObject();
             for (Map.Entry<String, Double> priceLine : map.entrySet()) {

@@ -36,6 +36,7 @@ public class OrdersAggregationApplication {
     ClientHttpRequestFactory clientHttpRequestFactory() {
         HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();
         clientHttpRequestFactory.setConnectTimeout(DEFAULT_TIMEOUT);
+        clientHttpRequestFactory.setConnectionRequestTimeout(DEFAULT_TIMEOUT);
         return clientHttpRequestFactory;
     }
 }
