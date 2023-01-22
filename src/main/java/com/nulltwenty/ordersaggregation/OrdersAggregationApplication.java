@@ -2,6 +2,7 @@ package com.nulltwenty.ordersaggregation;
 
 import com.nulltwenty.ordersaggregation.serializer.AggregatedResponseSerializer;
 import com.nulltwenty.ordersaggregation.serializer.TrackResponseSerializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -10,7 +11,8 @@ import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
 public class OrdersAggregationApplication {
-    private final int DEFAULT_TIMEOUT = 5000;
+    @Value("${default-connection-timeout}")
+    private int timeout;
 
     public static void main(String[] args) {
         SpringApplication.run(OrdersAggregationApplication.class, args);
@@ -29,8 +31,8 @@ public class OrdersAggregationApplication {
     @Bean
     RestTemplate restTemplateTimeoutWithRequestFactory() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(DEFAULT_TIMEOUT);
-        requestFactory.setReadTimeout(DEFAULT_TIMEOUT);
+        requestFactory.setConnectTimeout(timeout);
+        requestFactory.setReadTimeout(timeout);
         return new RestTemplate(requestFactory);
     }
 }
