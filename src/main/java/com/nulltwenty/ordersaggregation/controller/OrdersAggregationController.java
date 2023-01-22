@@ -11,8 +11,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,38 +33,54 @@ public class OrdersAggregationController {
 
     @GetMapping(value = "/aggregation")
     public ResponseEntity<String> aggregation(@RequestParam(required = false) int[] shipmentsOrderNumbers, @RequestParam(required = false) int[] trackOrderNumbers, @RequestParam(required = false) String[] pricingCountryCodes) throws IOException, JSONException {
-        String shipmentOrderResponse = getShipmentOrder(shipmentsOrderNumbers).getBody();
-        String trackStatusResponseBody = getTrackStatus(trackOrderNumbers).getBody();
-        String pricingResponseBody = getPricing(pricingCountryCodes).getBody();
+        ResponseEntity<String> shipmentOrderResponseEntity = getShipmentOrder(shipmentsOrderNumbers);
+        ResponseEntity<String> trackStatusResponseEntity = getTrackStatus(trackOrderNumbers);
+        ResponseEntity<String> pricingResponseEntity = getPricing(pricingCountryCodes);
 
-        return ResponseEntity.ok().body(createAggregatedResponseAsJson(shipmentOrderResponse, trackStatusResponseBody, pricingResponseBody));
+        return ResponseEntity.ok().body(createAggregatedResponseAsJson(shipmentOrderResponseEntity, trackStatusResponseEntity, pricingResponseEntity));
     }
 
-    private String createAggregatedResponseAsJson(String shipmentOrderResponse, String trackStatusResponseBody, String pricingResponseBody) throws JsonProcessingException {
+    private String createAggregatedResponseAsJson(ResponseEntity<String> shipmentOrderResponseEntity, ResponseEntity<String> trackStatusResponseEntity, ResponseEntity<String> pricingResponseEntity) throws JsonProcessingException {
         AggregatedResponse aggregatedResponse = new AggregatedResponse();
 
         ObjectMapper mapper = new ObjectMapper();
         TypeReference<HashMap<String, Object>> typeReference = new TypeReference<>() {
         };
 
-        Map<String, Object> data = mapper.readValue(trackStatusResponseBody, typeReference);
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
-            aggregatedResponse.setTrack(entry.getKey(), entry.getValue());
-        }
-
-        data = mapper.readValue(shipmentOrderResponse, typeReference);
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
-            aggregatedResponse.setShipments(entry.getKey(), entry.getValue());
-        }
-
-        data = mapper.readValue(pricingResponseBody, typeReference);
-        for (Map.Entry<String, Object> entry : data.entrySet()) {
-            aggregatedResponse.setPricing(entry.getKey(), entry.getValue());
-        }
+        addTrackToAggregatedResponse(trackStatusResponseEntity, aggregatedResponse, mapper, typeReference);
+        addShipmentsAggregatedResponse(shipmentOrderResponseEntity, aggregatedResponse, mapper, typeReference);
+        addPricingToAggregatedResponse(pricingResponseEntity, aggregatedResponse, mapper, typeReference);
         return mapper.writeValueAsString(aggregatedResponse);
     }
 
-    private HttpEntity<String> getPricing(String[] countryCodes) {
+    private void addPricingToAggregatedResponse(ResponseEntity<String> pricingResponseEntity, AggregatedResponse aggregatedResponse, ObjectMapper mapper, TypeReference<HashMap<String, Object>> typeReference) throws JsonProcessingException {
+        if (pricingResponseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+            Map<String, Object> data = mapper.readValue(pricingResponseEntity.getBody(), typeReference);
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                aggregatedResponse.setPricing(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void addShipmentsAggregatedResponse(ResponseEntity<String> shipmentOrderResponseEntity, AggregatedResponse aggregatedResponse, ObjectMapper mapper, TypeReference<HashMap<String, Object>> typeReference) throws JsonProcessingException {
+        if (shipmentOrderResponseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+            Map<String, Object> data = mapper.readValue(shipmentOrderResponseEntity.getBody(), typeReference);
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                aggregatedResponse.setShipments(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void addTrackToAggregatedResponse(ResponseEntity<String> trackStatusResponseEntity, AggregatedResponse aggregatedResponse, ObjectMapper mapper, TypeReference<HashMap<String, Object>> typeReference) throws JsonProcessingException {
+        if (trackStatusResponseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+            Map<String, Object> data = mapper.readValue(trackStatusResponseEntity.getBody(), typeReference);
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                aggregatedResponse.setTrack(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private ResponseEntity<String> getPricing(String[] countryCodes) {
         if (countryCodes != null) {
             try {
                 Map<String, Double> map = new HashMap<>();
@@ -79,7 +94,7 @@ public class OrdersAggregationController {
                 }
                 return ResponseEntity.ok().body(returnValue.toString());
             } catch (Exception e) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
             }
         } else {
             return ResponseEntity.ok().body(new JSONObject().toString());
@@ -104,7 +119,7 @@ public class OrdersAggregationController {
                 }
                 return ResponseEntity.ok().body(returnValue.toString());
             } catch (Exception e) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
             }
         } else {
             return ResponseEntity.ok().body(new JSONObject().toString());
@@ -125,7 +140,7 @@ public class OrdersAggregationController {
                 }
                 return ResponseEntity.ok().body(returnValue.toString());
             } catch (Exception e) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatusCode.valueOf(503));
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
             }
         } else {
             return ResponseEntity.ok().body(new JSONObject().toString());
