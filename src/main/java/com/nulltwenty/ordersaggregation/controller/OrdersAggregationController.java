@@ -8,7 +8,6 @@ import com.nulltwenty.ordersaggregation.service.pricing.PricingService;
 import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,7 +31,7 @@ public class OrdersAggregationController {
     private PricingService pricingService;
 
     @GetMapping(value = "/aggregation")
-    public ResponseEntity<String> aggregation(@RequestParam(required = false) int[] shipmentsOrderNumbers, @RequestParam(required = false) int[] trackOrderNumbers, @RequestParam(required = false) String[] pricingCountryCodes) throws IOException, JSONException {
+    public ResponseEntity<String> aggregation(@RequestParam(required = false) int[] shipmentsOrderNumbers, @RequestParam(required = false) int[] trackOrderNumbers, @RequestParam(required = false) String[] pricingCountryCodes) throws IOException {
         ResponseEntity<String> shipmentOrderResponseEntity = getShipmentOrder(shipmentsOrderNumbers);
         ResponseEntity<String> trackStatusResponseEntity = getTrackStatus(trackOrderNumbers);
         ResponseEntity<String> pricingResponseEntity = getPricing(pricingCountryCodes);
