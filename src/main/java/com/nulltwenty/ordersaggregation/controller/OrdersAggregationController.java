@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -113,7 +114,7 @@ public class OrdersAggregationController {
                     if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
                         map.put(String.valueOf(shipmentsOrderNumber), response.getBody());
                     } else {
-                        return new ResponseEntity<>(Objects.requireNonNull(response.getBody()).toString(), HttpStatus.SERVICE_UNAVAILABLE);
+                        return new ResponseEntity<>(Arrays.toString(Objects.requireNonNull(response.getBody())), HttpStatus.SERVICE_UNAVAILABLE);
                     }
                 }
                 JSONObject returnValue = new JSONObject();
