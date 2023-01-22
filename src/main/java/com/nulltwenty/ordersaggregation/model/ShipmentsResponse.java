@@ -10,7 +10,15 @@ public class ShipmentsResponse {
         return number;
     }
 
+    public void setNumber(String number) {
+        this.number = number;
+    }
+
     public List<String> getShipmentStatus() {
         return shipmentStatus;
+    }
+
+    public void setShipmentStatus(List<String> shipmentStatus) {
+        this.shipmentStatus = shipmentStatus;
     }
 }
