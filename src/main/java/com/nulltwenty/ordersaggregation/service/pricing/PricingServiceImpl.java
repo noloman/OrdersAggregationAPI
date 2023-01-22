@@ -9,7 +9,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class PricingServiceImpl implements PricingService {
-    private static final String URL = "http://127.0.0.1:4000/pricing?countryCode=";
+    public static final String URL = "http://127.0.0.1:4000/pricing?countryCode=";
     @Autowired
     private RestTemplate restTemplate;
 

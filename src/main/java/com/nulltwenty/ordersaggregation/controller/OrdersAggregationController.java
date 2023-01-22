@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -88,8 +87,6 @@ public class OrdersAggregationController {
                     ResponseEntity<String> responseEntity = pricingService.getPricing(countryCode);
                     if (responseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
                         map.put(countryCode, Double.parseDouble(Objects.requireNonNull(responseEntity.getBody())));
-                    } else {
-                        return responseEntity;
                     }
                 }
                 JSONObject returnValue = new JSONObject();
@@ -113,8 +110,6 @@ public class OrdersAggregationController {
                     ResponseEntity<String[]> response = shipmentService.getShipmentProducts(shipmentsOrderNumber);
                     if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
                         map.put(String.valueOf(shipmentsOrderNumber), response.getBody());
-                    } else {
-                        return new ResponseEntity<>(Arrays.toString(Objects.requireNonNull(response.getBody())), HttpStatus.SERVICE_UNAVAILABLE);
                     }
                 }
                 JSONObject returnValue = new JSONObject();
@@ -142,8 +137,6 @@ public class OrdersAggregationController {
                     ResponseEntity<String> response = Objects.requireNonNull(trackStatusService.getTrackStatusFromOrderNumber(trackOrderNumber));
                     if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
                         map.put(String.valueOf(trackOrderNumber), Objects.requireNonNull(response.getBody()).replaceAll("\"", ""));
-                    } else {
-                        return response;
                     }
                 }
                 JSONObject returnValue = new JSONObject();
