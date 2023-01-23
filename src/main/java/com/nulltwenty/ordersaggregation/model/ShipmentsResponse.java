@@ -1,24 +1,27 @@
 package com.nulltwenty.ordersaggregation.model;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ShipmentsResponse {
-    private String number;
-    private List<String> shipmentStatus;
+    private Map<String, String[]> values = new HashMap<>();
 
-    public String getNumber() {
-        return number;
+    @JsonAnySetter
+    public void put(String key, String[] value) {
+        values = Collections.singletonMap(key, value);
     }
 
-    public void setNumber(String number) {
-        this.number = number;
+    @JsonAnyGetter
+    public Map<String, String[]> getValues() {
+        return values;
     }
 
-    public List<String> getShipmentStatus() {
-        return shipmentStatus;
-    }
-
-    public void setShipmentStatus(List<String> shipmentStatus) {
-        this.shipmentStatus = shipmentStatus;
+    @Override
+    public String toString() {
+        return values.toString();
     }
 }

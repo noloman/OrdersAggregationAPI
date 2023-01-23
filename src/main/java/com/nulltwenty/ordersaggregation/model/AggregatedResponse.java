@@ -1,7 +1,5 @@
 package com.nulltwenty.ordersaggregation.model;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +12,6 @@ public class AggregatedResponse {
         return track;
     }
 
-    @JsonAnySetter
     public void setTrack(String name, Object value) {
         track.put(name, value);
     }
@@ -23,7 +20,6 @@ public class AggregatedResponse {
         return shipments;
     }
 
-    @JsonAnySetter
     public void setShipments(String name, Object value) {
         shipments.put(name, value);
     }
@@ -32,7 +28,6 @@ public class AggregatedResponse {
         return pricing;
     }
 
-    @JsonAnySetter
     public void setPricing(String name, Object value) {
         pricing.put(name, value);
     }

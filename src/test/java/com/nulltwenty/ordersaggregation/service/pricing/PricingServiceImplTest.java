@@ -1,6 +1,8 @@
 package com.nulltwenty.ordersaggregation.service.pricing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nulltwenty.ordersaggregation.model.PricingResponse;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -14,8 +16,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
-
-import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,26 +32,27 @@ public class PricingServiceImplTest {
     @Test
     public void givenARestTemplate_whenItReturns200OK_theServiceShouldReturnTheSame() throws JsonProcessingException {
         PricingResponse pricingResponse = new PricingResponse();
-        pricingResponse.setPrice(BigDecimal.TEN);
-        pricingResponse.setCountryCode(countryCode);
+        pricingResponse.put(countryCode, Double.parseDouble("12.0102356"));
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        String pricingResponseString = objectMapper.writeValueAsString(pricingResponse);
+        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class))).thenReturn(new ResponseEntity<>("12.0102356", HttpStatus.OK));
 
-        Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class))).thenReturn(new ResponseEntity<>(pricingResponse, HttpStatus.OK));
-
-        ResponseEntity<String> serviceResponse = pricingService.getPricing(countryCode);
+        ResponseEntity<String> serviceResponse = pricingService.getPricing(new String[]{countryCode});
         Assertions.assertNotNull(serviceResponse);
         assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
-        assertEquals(pricingResponse, serviceResponse.getBody());
+        assertEquals(pricingResponseString, serviceResponse.getBody());
     }
 
     @Test
-    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnTheSame() {
-        String serviceUnavailableResponse = "\"503 : \"{\"message\":\"service unavailable\"}";
+    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAnEmptyResponseWith200OK() {
+        String serviceUnavailableResponse = "\"503:\"{\"message\":\"service unavailable\"}";
         Mockito.when(restTemplate.exchange(any(String.class), eq(HttpMethod.GET), eq(null), any(ParameterizedTypeReference.class))).thenReturn(new ResponseEntity<>(serviceUnavailableResponse, HttpStatus.SERVICE_UNAVAILABLE));
 
-        ResponseEntity<String> serviceResponse = pricingService.getPricing(countryCode);
+        ResponseEntity<String> serviceResponse = pricingService.getPricing(new String[]{countryCode});
 
         Assertions.assertNotNull(serviceResponse);
-        assertEquals(serviceResponse.getStatusCode(), HttpStatus.SERVICE_UNAVAILABLE);
-        assertEquals(serviceUnavailableResponse, serviceResponse.getBody());
+        assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
+        assertEquals("{}", serviceResponse.getBody());
     }
 }

@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -51,10 +52,8 @@ class OrdersAggregationControllerTest {
 
     @Test
     void givenAnAggregationEndPoint_whenTheRequestHasNoCountryCode_itShouldReturnAnEmptyPricingAggregationResponseJson() throws Exception {
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(987654321))).thenReturn(ResponseEntity.ok("DELIVERING"));
-        when(shipmentService.getShipmentProducts(eq(987654321))).thenReturn(ResponseEntity.ok(new String[]{"BOX", "BOX", "PALLET"}));
-        when(shipmentService.getShipmentProducts(eq(123456789))).thenReturn(ResponseEntity.ok(new String[]{"ENVELOP", "BOX", "ENVELOP", "PALLET"}));
+        when(trackStatusService.getTrackStatus(eq(new int[]{987654321, 123456789}))).thenReturn(ResponseEntity.ok("{\"123456789\":\"COLLECTING\", \"987654321\":\"DELIVERING\"}"));
+        when(shipmentService.getShipmentOrder(eq(new int[]{987654321, 123456789}))).thenReturn(ResponseEntity.ok("{\"123456789\":[\"ENVELOP\",\"BOX\",\"ENVELOP\",\"PALLET\"],\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]}"));
 
         MockHttpServletResponse response = mvc.perform(get("/aggregation?shipmentsOrderNumbers=987654321,123456789&trackOrderNumbers=987654321,123456789").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
@@ -65,10 +64,8 @@ class OrdersAggregationControllerTest {
 
     @Test
     void givenAnAggregationEndPoint_whenTheRequestHasNoShipmentsOrderNumber_itShouldReturnAnEmptyShipmentsAggregationResponseJson() throws Exception {
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(987654321))).thenReturn(ResponseEntity.ok("DELIVERING"));
-        when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
-        when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.ok("5.552640023717359"));
+        when(trackStatusService.getTrackStatus(eq(new int[]{987654321, 123456789}))).thenReturn(ResponseEntity.ok("{\"123456789\":\"COLLECTING\", \"987654321\":\"DELIVERING\"}"));
+        when(pricingService.getPricing(eq(new String[]{"NL", "CN"}))).thenReturn(ResponseEntity.ok("{\"CN\":5.552640023717359,\"NL\":20.388832257336986}"));
 
         MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=987654321,123456789&&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
@@ -79,10 +76,9 @@ class OrdersAggregationControllerTest {
 
     @Test
     void givenAnAggregationEndPoint_whenTheTrackStatusServiceRespondsWithAnError_itShouldReturnAnEmptyTrackAggregationResponseJson() throws Exception {
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("\"503 : \"{\"message\":\"service unavailable\"}"));
-        when(shipmentService.getShipmentProducts(eq(987654321))).thenReturn(ResponseEntity.ok(new String[]{"BOX", "BOX", "PALLET"}));
-        when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
-        when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.ok("5.552640023717359"));
+        when(trackStatusService.getTrackStatus(eq(new int[]{123456789}))).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("\"503:\"{\"message\":\"service unavailable\"}"));
+        when(shipmentService.getShipmentOrder(eq(new int[]{987654321}))).thenReturn(ResponseEntity.ok("{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]}"));
+        when(pricingService.getPricing(eq(new String[]{"NL", "CN"}))).thenReturn(ResponseEntity.ok("{\"CN\":5.552640023717359,\"NL\":20.388832257336986}"));
 
         MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=123456789&shipmentsOrderNumbers=987654321&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
@@ -93,59 +89,53 @@ class OrdersAggregationControllerTest {
 
     @Test
     void givenAnAggregationEndPoint_whenTheShipmentServiceRespondsWithAnErrorForOneOfTheOrderNumbers_itShouldShipTheSuccessfulOrderInTheAggregationResponseJson() throws Exception {
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
-        when(shipmentService.getShipmentProducts(eq(987654321))).thenReturn(ResponseEntity.ok(new String[]{"BOX", "BOX", "PALLET"}));
-        when(shipmentService.getShipmentProducts(eq(123456789))).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new String[]{"\"503 : \"{\"message\":\"service unavailable\"}"}));
-        when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
-        when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.ok("5.552640023717359"));
+        when(trackStatusService.getTrackStatus(eq(new int[]{123456789}))).thenReturn(ResponseEntity.ok("{\"123456789\":\"COLLECTING\"}"));
+        when(shipmentService.getShipmentOrder(eq(new int[]{123456789, 987654321}))).thenReturn(ResponseEntity.ok("{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]}"));
+        when(pricingService.getPricing(eq(new String[]{"NL", "CN"}))).thenReturn(ResponseEntity.ok("{\"NL\":20.388832257336986}"));
 
         MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=123456789&shipmentsOrderNumbers=123456789,987654321&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
 
-        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\"},\"shipments\":{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]},\"pricing\":{\"CN\":5.552640023717359,\"NL\":20.388832257336986}}";
+        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\"},\"shipments\":{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]},\"pricing\":{\"NL\":20.388832257336986}}";
         assertEquals(expectedResponse, response.getContentAsString());
     }
 
     @Test
     void givenAnAggregationEndPoint_whenTheTrackStatusServiceRespondsWithAnErrorForOneOfTheOrders_itShouldTrackTheSuccessfulOrderInTheAggregationResponseJson() throws Exception {
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(987654321))).thenReturn(ResponseEntity.ok("COLLECTING"));
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("\"503 : \"{\"message\":\"service unavailable\"}"));
-        when(shipmentService.getShipmentProducts(eq(987654321))).thenReturn(ResponseEntity.ok(new String[]{"BOX", "BOX", "PALLET"}));
-        when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
-        when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.ok("5.552640023717359"));
+        when(trackStatusService.getTrackStatus(eq(new int[]{123456789, 987654321}))).thenReturn(ResponseEntity.ok("{\"987654321\":\"COLLECTING\"}"));
+        when(shipmentService.getShipmentOrder(eq(new int[]{987654321}))).thenReturn(ResponseEntity.ok("{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]}"));
+        when(pricingService.getPricing(eq(new String[]{"NL", "CN"}))).thenReturn(ResponseEntity.ok("{\"CN\":78.13363484600944,\"NL\":18.528027571519413}"));
 
         MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=123456789,987654321&shipmentsOrderNumbers=987654321&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
 
-        String expectedResponse = "{\"track\":{\"987654321\":\"COLLECTING\"},\"shipments\":{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]},\"pricing\":{\"CN\":5.552640023717359,\"NL\":20.388832257336986}}";
+        String expectedResponse = "{\"track\":{\"987654321\":\"COLLECTING\"},\"shipments\":{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]},\"pricing\":{\"CN\":78.13363484600944,\"NL\":18.528027571519413}}";
         assertEquals(expectedResponse, response.getContentAsString());
     }
 
     @Test
     void givenAnAggregationEndPoint_whenTheShipmentServiceRespondsWithAnError_itShouldReturnAnEmptyShipmentsAggregationResponseJson() throws Exception {
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
-        when(shipmentService.getShipmentProducts(eq(987654321))).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new String[]{"\"503 : \"{\"message\":\"service unavailable\"}"}));
-        when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
-        when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.ok("5.552640023717359"));
+        when(trackStatusService.getTrackStatus(eq(new int[]{123456789}))).thenReturn(ResponseEntity.ok("{\"123456789\":\"COLLECTING\"}"));
+        when(shipmentService.getShipmentOrder(eq(new int[]{987654321}))).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("\"503:\"{\"message\":\"service unavailable\"}"));
+        when(pricingService.getPricing(eq(new String[]{"NL", "CN"}))).thenReturn(ResponseEntity.ok("{\"CN\":78.13363484600944,\"NL\":18.528027571519413}"));
 
         MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=123456789&shipmentsOrderNumbers=987654321&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
 
-        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\"},\"shipments\":{},\"pricing\":{\"CN\":5.552640023717359,\"NL\":20.388832257336986}}";
+        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\"},\"shipments\":{},\"pricing\":{\"CN\":78.13363484600944,\"NL\":18.528027571519413}}";
         assertEquals(expectedResponse, response.getContentAsString());
     }
 
     @Test
     void givenAnAggregationEndPoint_whenThePricingServiceRespondsWithAnError_itShouldReturnAnEmptyPricingAggregationResponseJson() throws Exception {
-        when(trackStatusService.getTrackStatusFromOrderNumber(eq(123456789))).thenReturn(ResponseEntity.ok("COLLECTING"));
-        when(shipmentService.getShipmentProducts(eq(987654321))).thenReturn(ResponseEntity.ok(new String[]{"BOX", "BOX", "PALLET"}));
-        when(pricingService.getPricing(eq("CN"))).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("\"503 : \"{\"message\":\"service unavailable\"}"));
-        when(pricingService.getPricing(eq("NL"))).thenReturn(ResponseEntity.ok("20.388832257336986"));
+        when(trackStatusService.getTrackStatus(eq(new int[]{123456789}))).thenReturn(ResponseEntity.ok("{\"123456789\":\"COLLECTING\"}"));
+        when(shipmentService.getShipmentOrder(eq(new int[]{987654321}))).thenReturn(ResponseEntity.ok("{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]}"));
+        when(pricingService.getPricing(any())).thenReturn(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body("\"503:\"{\"message\":\"service unavailable\"}"));
 
         MockHttpServletResponse response = mvc.perform(get("/aggregation?trackOrderNumbers=123456789&shipmentsOrderNumbers=987654321&pricingCountryCodes=NL,CN").accept(MediaType.APPLICATION_JSON)).andReturn().getResponse();
         assertNotNull(response);
 
-        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\"},\"shipments\":{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]},\"pricing\":{\"NL\":20.388832257336986}}";
+        String expectedResponse = "{\"track\":{\"123456789\":\"COLLECTING\"},\"shipments\":{\"987654321\":[\"BOX\",\"BOX\",\"PALLET\"]},\"pricing\":{}}";
         assertEquals(expectedResponse, response.getContentAsString());
     }
 }

@@ -1,24 +1,27 @@
 package com.nulltwenty.ordersaggregation.model;
 
-import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PricingResponse {
-    private String countryCode;
-    private BigDecimal price;
+    private Map<String, Double> values = new HashMap<>();
 
-    public String getCountryCode() {
-        return countryCode;
+    @JsonAnySetter
+    public void put(String key, Double value) {
+        values = Collections.singletonMap(key, value);
     }
 
-    public void setCountryCode(String countryCode) {
-        this.countryCode = countryCode;
+    @JsonAnyGetter
+    public Map<String, Double> getValues() {
+        return values;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    @Override
+    public String toString() {
+        return values.toString();
     }
 }
