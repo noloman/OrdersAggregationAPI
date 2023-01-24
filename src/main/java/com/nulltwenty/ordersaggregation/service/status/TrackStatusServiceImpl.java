@@ -1,9 +1,8 @@
 package com.nulltwenty.ordersaggregation.service.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -20,9 +19,11 @@ public class TrackStatusServiceImpl implements TrackStatusService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public ResponseEntity<String> getTrackStatusFromOrderNumber(int orderNumber) {
-        return restTemplate.exchange(URL + orderNumber, HttpMethod.GET, null, new ParameterizedTypeReference<>() {
-        });
+        return restTemplate.getForEntity(URL + orderNumber, String.class);
     }
 
     @Override
@@ -36,11 +37,7 @@ public class TrackStatusServiceImpl implements TrackStatusService {
                         map.put(String.valueOf(trackOrderNumber), Objects.requireNonNull(response.getBody()).replaceAll("\"", ""));
                     }
                 }
-                JSONObject returnValue = new JSONObject();
-                for (Map.Entry<String, String> trackLine : map.entrySet()) {
-                    returnValue.put(trackLine.getKey(), trackLine.getValue());
-                }
-                return ResponseEntity.ok().body(returnValue.toString());
+                return ResponseEntity.ok().body(objectMapper.writeValueAsString(map));
             } catch (Exception e) {
                 return new ResponseEntity<>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
             }

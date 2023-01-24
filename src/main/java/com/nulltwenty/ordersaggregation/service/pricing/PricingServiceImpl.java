@@ -1,9 +1,8 @@
 package com.nulltwenty.ordersaggregation.service.pricing;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,10 +18,11 @@ public class PricingServiceImpl implements PricingService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private ResponseEntity<String> getPricing(String countryCode) {
-        return restTemplate.exchange(URL + countryCode, HttpMethod.GET, null, new ParameterizedTypeReference<>() {
-        });
+        return restTemplate.getForEntity(URL + countryCode, String.class);
     }
 
     @Override
@@ -31,16 +31,12 @@ public class PricingServiceImpl implements PricingService {
             try {
                 Map<String, Double> map = new HashMap<>();
                 for (String countryCode : countryCodes) {
-                    ResponseEntity<String> responseEntity = getPricing(countryCode);
+                    ResponseEntity<String> responseEntity = Objects.requireNonNull(getPricing(countryCode));
                     if (responseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
                         map.put(countryCode, Double.valueOf(Objects.requireNonNull(responseEntity.getBody())));
                     }
                 }
-                JSONObject returnValue = new JSONObject();
-                for (Map.Entry<String, Double> priceLine : map.entrySet()) {
-                    returnValue.put(priceLine.getKey(), priceLine.getValue());
-                }
-                return ResponseEntity.ok().body(returnValue.toString());
+                return ResponseEntity.ok().body(objectMapper.writeValueAsString(map));
             } catch (Exception e) {
                 return new ResponseEntity<>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
             }

@@ -1,5 +1,6 @@
 package com.nulltwenty.ordersaggregation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,5 +23,10 @@ public class OrdersAggregationApplication {
         requestFactory.setConnectTimeout(timeout);
         requestFactory.setReadTimeout(timeout);
         return new RestTemplate(requestFactory);
+    }
+
+    @Bean
+    ObjectMapper getObjectMapper() {
+        return new ObjectMapper();
     }
 }

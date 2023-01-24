@@ -1,6 +1,6 @@
 package com.nulltwenty.ordersaggregation.service.shipment;
 
-import org.json.JSONArray;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,10 +14,10 @@ import java.util.Map;
 @Service
 public class ShipmentServiceImpl implements ShipmentService {
     private static final String URL = "http://127.0.0.1:4000/shipment-products?orderNumber=";
-
+    @Autowired
+    private ObjectMapper objectMapper;
     @Autowired
     private RestTemplate restTemplate;
-
 
     private ResponseEntity<String> getShipmentProducts(int orderNumber) {
         return restTemplate.getForEntity(URL + orderNumber, String.class);
@@ -27,20 +27,15 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
         if (shipmentsOrderNumbers != null) {
             try {
-                Map<String, String> map = new HashMap<>();
-                 for (int shipmentsOrderNumber : shipmentsOrderNumbers) {
+                Map<String, String[]> map = new HashMap<>();
+                for (int shipmentsOrderNumber : shipmentsOrderNumbers) {
                     ResponseEntity<String> response = getShipmentProducts(shipmentsOrderNumber);
                     if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
-                        map.put(String.valueOf(shipmentsOrderNumber), response.getBody());
+                        String[] responseBodyStringArray = objectMapper.readValue(response.getBody(), String[].class);
+                        map.put(String.valueOf(shipmentsOrderNumber), responseBodyStringArray);
                     }
                 }
-                JSONObject returnValue = new JSONObject();
-                for (Map.Entry<String, String> trackLine : map.entrySet()) {
-                    JSONArray shipmentArray = new JSONArray();
-                    shipmentArray.put(trackLine.getValue());
-                    returnValue.put(trackLine.getKey(), shipmentArray);
-                }
-                return ResponseEntity.ok().body(returnValue.toString());
+                return ResponseEntity.ok().body(objectMapper.writeValueAsString(map));
             } catch (Exception e) {
                 return new ResponseEntity<>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
             }

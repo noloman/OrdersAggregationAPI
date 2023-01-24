@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,27 +23,33 @@ import static org.mockito.ArgumentMatchers.eq;
 public class ShipmentServiceImplTest {
     @InjectMocks
     private final ShipmentService shipmentService = new ShipmentServiceImpl();
+    @Spy
+    private ObjectMapper objectMapper;
     @Mock
     private RestTemplate restTemplate;
 
     @Test
     public void givenARestTemplate_whenItReturns200_theServiceShouldReturnAResponseEntityOfAStringArray() throws JsonProcessingException {
-        String shipmentString = "[\"BOX\",\"BOX\",\"PALLET\"]";
+        String[] shipmentArray = {"BOX", "BOX", "PALLET"};
+        String shipmentString = objectMapper.writeValueAsString(shipmentArray);
         Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(shipmentString, HttpStatus.OK));
 
+        ShipmentsResponse expectedShipmentResponse = new ShipmentsResponse();
+        expectedShipmentResponse.put("1", shipmentArray);
+
         ResponseEntity<String> serviceResponse = shipmentService.getShipmentOrder(new int[]{1});
+
         Assertions.assertNotNull(serviceResponse);
         assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
 
-        ShipmentsResponse shipmentsResponse = new ShipmentsResponse();
-        shipmentsResponse.put("1", new String[]{shipmentString});
-        ObjectMapper mapper = new ObjectMapper();
-        String expected = mapper.writeValueAsString(shipmentsResponse);
-        assertEquals(expected, serviceResponse.getBody());
+        ShipmentsResponse actualResponse = objectMapper.readValue(serviceResponse.getBody(), ShipmentsResponse.class);
+        String expectedStringResponse = objectMapper.writeValueAsString(expectedShipmentResponse);
+        String actualStringResponse = objectMapper.writeValueAsString(actualResponse);
+        assertEquals(expectedStringResponse, actualStringResponse);
     }
 
     @Test
-    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAResponseEntityOfAStringArrayWithAnError() {
+    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAResponseEntityWithEmptyCurlyBracketsAnd200OK() {
         String serviceUnavailableResponse = "\"503:\"{\"message\":\"service unavailable\"}";
         Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(serviceUnavailableResponse, HttpStatus.SERVICE_UNAVAILABLE));
 
