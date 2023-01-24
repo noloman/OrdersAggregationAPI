@@ -1,46 +1,46 @@
 package com.nulltwenty.ordersaggregation.service.shipment;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONObject;
+import com.nulltwenty.ordersaggregation.model.dto.ShipmentDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ShipmentServiceImpl implements ShipmentService {
     private static final String URL = "http://127.0.0.1:4000/shipment-products?orderNumber=";
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final Logger logger = LoggerFactory.getLogger(ShipmentServiceImpl.class);
     @Autowired
     private RestTemplate restTemplate;
 
-    private ResponseEntity<String> getShipmentProducts(int orderNumber) {
-        return restTemplate.getForEntity(URL + orderNumber, String.class);
+    private ResponseEntity<String[]> getShipmentProducts(int orderNumber) {
+        return restTemplate.getForEntity(URL + orderNumber, String[].class);
     }
 
     @Override
-    public ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers) {
+    public List<ShipmentDTO> getShipmentOrder(int[] shipmentsOrderNumbers) {
+        List<ShipmentDTO> shipmentList = new ArrayList<>();
         if (shipmentsOrderNumbers != null) {
             try {
-                Map<String, String[]> map = new HashMap<>();
                 for (int shipmentsOrderNumber : shipmentsOrderNumbers) {
-                    ResponseEntity<String> response = getShipmentProducts(shipmentsOrderNumber);
-                    if (response.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
-                        String[] responseBodyStringArray = objectMapper.readValue(response.getBody(), String[].class);
-                        map.put(String.valueOf(shipmentsOrderNumber), responseBodyStringArray);
+                    ResponseEntity<String[]> responseEntity = getShipmentProducts(shipmentsOrderNumber);
+                    if (responseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
+                        ShipmentDTO shipmentDTO = new ShipmentDTO(String.valueOf(shipmentsOrderNumber), responseEntity.getBody());
+                        shipmentList.add(shipmentDTO);
+                    } else {
+                        logger.error("Service unavailable: {}", responseEntity.getBody());
                     }
                 }
-                return ResponseEntity.ok().body(objectMapper.writeValueAsString(map));
             } catch (Exception e) {
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.SERVICE_UNAVAILABLE);
+                logger.error("Exception: {}", e.getMessage());
             }
-        } else {
-            return ResponseEntity.ok().body(new JSONObject().toString());
         }
+        return shipmentList;
     }
 }

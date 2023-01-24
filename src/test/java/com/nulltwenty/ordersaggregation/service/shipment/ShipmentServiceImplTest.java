@@ -2,7 +2,7 @@ package com.nulltwenty.ordersaggregation.service.shipment;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nulltwenty.ordersaggregation.model.ShipmentsResponse;
+import com.nulltwenty.ordersaggregation.model.dto.ShipmentDTO;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
@@ -15,6 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,7 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 @RunWith(MockitoJUnitRunner.class)
 public class ShipmentServiceImplTest {
     @InjectMocks
-    private final ShipmentService shipmentService = new ShipmentServiceImpl();
+    private ShipmentServiceImpl shipmentService;
     @Spy
     private ObjectMapper objectMapper;
     @Mock
@@ -30,33 +33,26 @@ public class ShipmentServiceImplTest {
 
     @Test
     public void givenARestTemplate_whenItReturns200_theServiceShouldReturnAResponseEntityOfAStringArray() throws JsonProcessingException {
-        String[] shipmentArray = {"BOX", "BOX", "PALLET"};
-        String shipmentString = objectMapper.writeValueAsString(shipmentArray);
-        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(shipmentString, HttpStatus.OK));
+        String[] fakeServerResponse = new String[]{"BOX", "BOX", "PALLET"};
+        ShipmentDTO shipmentDTO = new ShipmentDTO("1", fakeServerResponse);
+        List<ShipmentDTO> expectedServerResponse = new ArrayList<>();
+        expectedServerResponse.add(shipmentDTO);
 
-        ShipmentsResponse expectedShipmentResponse = new ShipmentsResponse();
-        expectedShipmentResponse.put("1", shipmentArray);
+        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String[].class))).thenReturn(new ResponseEntity<>(fakeServerResponse, HttpStatus.OK));
 
-        ResponseEntity<String> serviceResponse = shipmentService.getShipmentOrder(new int[]{1});
+        List<ShipmentDTO> actualServerResponse = shipmentService.getShipmentOrder(new int[]{1});
 
-        Assertions.assertNotNull(serviceResponse);
-        assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
-
-        ShipmentsResponse actualResponse = objectMapper.readValue(serviceResponse.getBody(), ShipmentsResponse.class);
-        String expectedStringResponse = objectMapper.writeValueAsString(expectedShipmentResponse);
-        String actualStringResponse = objectMapper.writeValueAsString(actualResponse);
-        assertEquals(expectedStringResponse, actualStringResponse);
+        Assertions.assertNotNull(actualServerResponse);
+        assertEquals(objectMapper.writeValueAsString(expectedServerResponse), objectMapper.writeValueAsString(actualServerResponse));
     }
 
     @Test
-    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAResponseEntityWithEmptyCurlyBracketsAnd200OK() {
-        String serviceUnavailableResponse = "\"503:\"{\"message\":\"service unavailable\"}";
-        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(serviceUnavailableResponse, HttpStatus.SERVICE_UNAVAILABLE));
+    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAResponseEntityWithEmptyCurlyBracketsAnd200OK() throws JsonProcessingException {
+        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String[].class))).thenReturn(new ResponseEntity<>(new String[]{}, HttpStatus.SERVICE_UNAVAILABLE));
 
-        ResponseEntity<String> serviceResponse = shipmentService.getShipmentOrder(new int[]{1});
+        List<ShipmentDTO> serviceResponse = shipmentService.getShipmentOrder(new int[]{1});
 
         Assertions.assertNotNull(serviceResponse);
-        assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
-        assertEquals("{}", serviceResponse.getBody());
+        assertEquals(objectMapper.writeValueAsString(new ArrayList<>()), objectMapper.writeValueAsString(serviceResponse));
     }
 }

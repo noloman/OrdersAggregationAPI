@@ -1,34 +1,33 @@
 package com.nulltwenty.ordersaggregation.model;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class AggregatedResponse {
-    private final Map<String, Object> track = new HashMap<>();
-    private final Map<String, Object> shipments = new HashMap<>();
-    private final Map<String, Object> pricing = new HashMap<>();
+    private Map<String, String[]> shipments;
+    private Map<String, String> track;
+    private Map<String, Double> pricing;
 
-    public Map<String, Object> getTrack() {
-        return track;
-    }
-
-    public void setTrack(String name, Object value) {
-        track.put(name, value);
-    }
-
-    public Map<String, Object> getShipments() {
+    public Map<String, String[]> getShipments() {
         return shipments;
     }
 
-    public void setShipments(String name, Object value) {
-        shipments.put(name, value);
+    public void setShipments(Map<String, String[]> shipments) {
+        this.shipments = shipments;
     }
 
-    public Map<String, Object> getPricing() {
+    public Map<String, String> getTrack() {
+        return track;
+    }
+
+    public void setTrack(Map<String, String> track) {
+        this.track = track;
+    }
+
+    public Map<String, Double> getPricing() {
         return pricing;
     }
 
-    public void setPricing(String name, Object value) {
-        pricing.put(name, value);
+    public void setPricing(Map<String, Double> pricing) {
+        this.pricing = pricing;
     }
 }

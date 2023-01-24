@@ -1,7 +1,9 @@
 package com.nulltwenty.ordersaggregation.service.status;
 
-import org.springframework.http.ResponseEntity;
+import com.nulltwenty.ordersaggregation.model.dto.TrackDTO;
+
+import java.util.List;
 
 public interface TrackStatusService {
-    ResponseEntity<String> getTrackStatus(int[] trackOrderNumbers);
+    List<TrackDTO> getTrackStatus(int[] trackOrderNumbers);
 }

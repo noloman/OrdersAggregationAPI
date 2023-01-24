@@ -1,25 +1,32 @@
 package com.nulltwenty.ordersaggregation.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
+import com.nulltwenty.ordersaggregation.model.dto.PricingDTO;
+import com.nulltwenty.ordersaggregation.model.dto.ShipmentDTO;
+import com.nulltwenty.ordersaggregation.model.dto.TrackDTO;
 import com.nulltwenty.ordersaggregation.service.pricing.PricingService;
 import com.nulltwenty.ordersaggregation.service.shipment.ShipmentService;
 import com.nulltwenty.ordersaggregation.service.status.TrackStatusService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
 public class OrdersAggregationController {
+    private final Logger logger = LoggerFactory.getLogger(OrdersAggregationController.class);
     @Autowired
     private ShipmentService shipmentService;
     @Autowired
@@ -27,52 +34,40 @@ public class OrdersAggregationController {
     @Autowired
     private PricingService pricingService;
 
-    @GetMapping(value = "/aggregation")
-    public ResponseEntity<String> aggregation(@RequestParam(required = false) int[] shipmentsOrderNumbers, @RequestParam(required = false) int[] trackOrderNumbers, @RequestParam(required = false) String[] pricingCountryCodes) throws IOException {
-        ResponseEntity<String> shipmentOrderResponseEntity = shipmentService.getShipmentOrder(shipmentsOrderNumbers);
-        ResponseEntity<String> trackStatusResponseEntity = trackStatusService.getTrackStatus(trackOrderNumbers);
-        ResponseEntity<String> pricingResponseEntity = pricingService.getPricing(pricingCountryCodes);
+    @Autowired
+    private ObjectMapper objectMapper;
 
-        return ResponseEntity.ok().body(createAggregatedResponseAsJson(shipmentOrderResponseEntity, trackStatusResponseEntity, pricingResponseEntity));
+    @GetMapping(value = "/aggregation")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<AggregatedResponse> aggregation(@RequestParam(required = false) int[] shipmentsOrderNumbers, @RequestParam(required = false) int[] trackOrderNumbers, @RequestParam(required = false) String[] pricingCountryCodes) throws IOException {
+
+        List<ShipmentDTO> shipmentOrderList = shipmentService.getShipmentOrder(shipmentsOrderNumbers);
+        List<TrackDTO> trackStatusOrderList = trackStatusService.getTrackStatus(trackOrderNumbers);
+        List<PricingDTO> pricingOrderList = pricingService.getPricing(pricingCountryCodes);
+
+        return ResponseEntity.ok().body(createAggregatedResponseAsJson(shipmentOrderList, trackStatusOrderList, pricingOrderList));
     }
 
-    private String createAggregatedResponseAsJson(ResponseEntity<String> shipmentOrderResponseEntity, ResponseEntity<String> trackStatusResponseEntity, ResponseEntity<String> pricingResponseEntity) throws JsonProcessingException {
+    private AggregatedResponse createAggregatedResponseAsJson(List<ShipmentDTO> shipmentList, List<TrackDTO> trackList, List<PricingDTO> pricingList) throws JsonProcessingException {
         AggregatedResponse aggregatedResponse = new AggregatedResponse();
 
-        ObjectMapper mapper = new ObjectMapper();
-        TypeReference<HashMap<String, Object>> typeReference = new TypeReference<>() {
-        };
-
-        addTrackToAggregatedResponse(trackStatusResponseEntity, aggregatedResponse, mapper, typeReference);
-        addShipmentsAggregatedResponse(shipmentOrderResponseEntity, aggregatedResponse, mapper, typeReference);
-        addPricingToAggregatedResponse(pricingResponseEntity, aggregatedResponse, mapper, typeReference);
-        return mapper.writeValueAsString(aggregatedResponse);
-    }
-
-    private void addPricingToAggregatedResponse(ResponseEntity<String> pricingResponseEntity, AggregatedResponse aggregatedResponse, ObjectMapper mapper, TypeReference<HashMap<String, Object>> typeReference) throws JsonProcessingException {
-        if (pricingResponseEntity != null && pricingResponseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
-            Map<String, Object> data = mapper.readValue(pricingResponseEntity.getBody(), typeReference);
-            for (Map.Entry<String, Object> entry : data.entrySet()) {
-                aggregatedResponse.setPricing(entry.getKey(), entry.getValue());
-            }
+        Map<String, String[]> shipmentsMap = new HashMap<>();
+        for (ShipmentDTO shipmentDTO : shipmentList) {
+            shipmentsMap.put(shipmentDTO.getNumber(), shipmentDTO.getPackaging());
         }
-    }
+        aggregatedResponse.setShipments(shipmentsMap);
 
-    private void addShipmentsAggregatedResponse(ResponseEntity<String> shipmentOrderResponseEntity, AggregatedResponse aggregatedResponse, ObjectMapper mapper, TypeReference<HashMap<String, Object>> typeReference) throws JsonProcessingException {
-        if (shipmentOrderResponseEntity != null && shipmentOrderResponseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
-            Map<String, Object> data = mapper.readValue(shipmentOrderResponseEntity.getBody(), typeReference);
-            for (Map.Entry<String, Object> entry : data.entrySet()) {
-                aggregatedResponse.setShipments(entry.getKey(), entry.getValue());
-            }
+        Map<String, String> trackMap = new HashMap<>();
+        for (TrackDTO trackDTO : trackList) {
+            trackMap.put(trackDTO.getTrackNumber(), trackDTO.getStatus());
         }
-    }
+        aggregatedResponse.setTrack(trackMap);
 
-    private void addTrackToAggregatedResponse(ResponseEntity<String> trackStatusResponseEntity, AggregatedResponse aggregatedResponse, ObjectMapper mapper, TypeReference<HashMap<String, Object>> typeReference) throws JsonProcessingException {
-        if (trackStatusResponseEntity != null && trackStatusResponseEntity.getStatusCode() != HttpStatus.SERVICE_UNAVAILABLE) {
-            Map<String, Object> data = mapper.readValue(trackStatusResponseEntity.getBody(), typeReference);
-            for (Map.Entry<String, Object> entry : data.entrySet()) {
-                aggregatedResponse.setTrack(entry.getKey(), entry.getValue());
-            }
+        Map<String, Double> pricingMap = new HashMap<>();
+        for (PricingDTO pricingDTO : pricingList) {
+            pricingMap.put(pricingDTO.getCountryCode(), pricingDTO.getPrice());
         }
+        aggregatedResponse.setPricing(pricingMap);
+        return aggregatedResponse;
     }
 }

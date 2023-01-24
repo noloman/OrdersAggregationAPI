@@ -1,9 +1,8 @@
 package com.nulltwenty.ordersaggregation.service.pricing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nulltwenty.ordersaggregation.model.PricingResponse;
+import com.nulltwenty.ordersaggregation.model.dto.PricingDTO;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
@@ -16,15 +15,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PricingServiceImplTest {
-    @InjectMocks
-    private final PricingService pricingService = new PricingServiceImpl();
     private final String countryCode = "NL";
+    @InjectMocks
+    private PricingServiceImpl pricingService;
     @Spy
     private ObjectMapper objectMapper;
     @Mock
@@ -32,27 +34,25 @@ public class PricingServiceImplTest {
 
     @Test
     public void givenARestTemplate_whenItReturns200OK_theServiceShouldReturnAResponseEntityOfAStringArray() throws JsonProcessingException {
-        PricingResponse pricingResponse = new PricingResponse();
-        pricingResponse.put(countryCode, Double.parseDouble("12.0102356"));
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        String pricingResponseString = objectMapper.writeValueAsString(pricingResponse);
-        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>("12.0102356", HttpStatus.OK));
+        Double fakeServerResponse = 12.0102356;
+        PricingDTO pricingDTO = new PricingDTO(countryCode, fakeServerResponse);
+        List<PricingDTO> expectedServerResponse = new ArrayList<>();
+        expectedServerResponse.add(pricingDTO);
+        Mockito.when(restTemplate.getForEntity(any(String.class), eq(Double.class))).thenReturn(new ResponseEntity<>(fakeServerResponse, HttpStatus.OK));
 
-        ResponseEntity<String> serviceResponse = pricingService.getPricing(new String[]{countryCode});
-        Assertions.assertNotNull(serviceResponse);
-        assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
-        assertEquals(pricingResponseString, serviceResponse.getBody());
+        List<PricingDTO> actualServerResponse = pricingService.getPricing(new String[]{countryCode});
+
+        Assertions.assertNotNull(actualServerResponse);
+        assertEquals(objectMapper.writeValueAsString(expectedServerResponse), objectMapper.writeValueAsString(actualServerResponse));
     }
 
     @Test
-    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAnEmptyResponseWith200OK() {
-        String serviceUnavailableResponse = "\"503:\"{\"message\":\"service unavailable\"}";
-        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(serviceUnavailableResponse, HttpStatus.SERVICE_UNAVAILABLE));
+    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAnEmptyResponseWith200OK() throws JsonProcessingException {
+        Mockito.when(restTemplate.getForEntity(any(String.class), eq(Double.class))).thenReturn(new ResponseEntity<>(0.0, HttpStatus.SERVICE_UNAVAILABLE));
 
-        ResponseEntity<String> serviceResponse = pricingService.getPricing(new String[]{countryCode});
+        List<PricingDTO> serviceResponse = pricingService.getPricing(new String[]{countryCode});
 
         Assertions.assertNotNull(serviceResponse);
-        assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
-        assertEquals("{}", serviceResponse.getBody());
+        assertEquals(objectMapper.writeValueAsString(new ArrayList<>()), objectMapper.writeValueAsString(serviceResponse));
     }
 }

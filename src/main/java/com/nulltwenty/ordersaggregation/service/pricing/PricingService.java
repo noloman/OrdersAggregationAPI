@@ -1,7 +1,9 @@
 package com.nulltwenty.ordersaggregation.service.pricing;
 
-import org.springframework.http.ResponseEntity;
+import com.nulltwenty.ordersaggregation.model.dto.PricingDTO;
+
+import java.util.List;
 
 public interface PricingService {
-    ResponseEntity<String> getPricing(String[] countryCodes);
+    List<PricingDTO> getPricing(String[] countryCodes);
 }

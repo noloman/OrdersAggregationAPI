@@ -1,7 +1,10 @@
 package com.nulltwenty.ordersaggregation.service.shipment;
 
-import org.springframework.http.ResponseEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nulltwenty.ordersaggregation.model.dto.ShipmentDTO;
+
+import java.util.List;
 
 public interface ShipmentService {
-    ResponseEntity<String> getShipmentOrder(int[] shipmentsOrderNumbers);
+    List<ShipmentDTO> getShipmentOrder(int[] shipmentsOrderNumbers) throws JsonProcessingException;
 }

@@ -2,6 +2,7 @@ package com.nulltwenty.ordersaggregation.service.status;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nulltwenty.ordersaggregation.model.dto.TrackDTO;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
@@ -14,8 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,7 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 @RunWith(MockitoJUnitRunner.class)
 public class TrackStatusServiceTest {
     @InjectMocks
-    private final TrackStatusService trackStatusService = new TrackStatusServiceImpl();
+    private TrackStatusServiceImpl trackStatusService;
     @Mock
     private RestTemplate restTemplate;
 
@@ -33,28 +34,29 @@ public class TrackStatusServiceTest {
 
     @Test
     public void givenARestTemplate_whenItReturns200_theServiceShouldReturnAResponseEntityOfAString() throws JsonProcessingException {
-        String trackString = "COLLECTING";
-        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(trackString, HttpStatus.OK));
+        List<TrackDTO> expectedServerResponse = new ArrayList<>();
+        TrackDTO trackDTO = new TrackDTO();
+        trackDTO.setTrackNumber(String.valueOf(1));
+        String fakeServerResponse = "COLLECTING";
+        trackDTO.setStatus(fakeServerResponse);
+        expectedServerResponse.add(trackDTO);
 
-        ResponseEntity<String> serviceResponse = trackStatusService.getTrackStatus(new int[]{1});
-        Assertions.assertNotNull(serviceResponse);
-        assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
+        Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(fakeServerResponse, HttpStatus.OK));
 
-        Map<String, String> response = new HashMap<>(2);
-        response.put("1", trackString);
-        String expected = objectMapper.writeValueAsString(response);
-        assertEquals(expected, serviceResponse.getBody());
+        List<TrackDTO> actualServerResponse = trackStatusService.getTrackStatus(new int[]{1});
+        Assertions.assertNotNull(actualServerResponse);
+
+        assertEquals(objectMapper.writeValueAsString(expectedServerResponse), objectMapper.writeValueAsString(actualServerResponse));
     }
 
     @Test
-    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAResponseEntityOfEmptyCurlyBracketsAnd200OK() {
+    public void givenARestTemplate_whenItReturns503ServiceUnavailable_theServiceShouldReturnAResponseEntityOfEmptyCurlyBracketsAnd200OK() throws JsonProcessingException {
         String serviceUnavailableResponse = "\"503:\"{\"message\":\"service unavailable\"}";
         Mockito.when(restTemplate.getForEntity(any(String.class), eq(String.class))).thenReturn(new ResponseEntity<>(serviceUnavailableResponse, HttpStatus.SERVICE_UNAVAILABLE));
 
-        ResponseEntity<String> serviceResponse = trackStatusService.getTrackStatus(new int[]{1});
+        List<TrackDTO> serviceResponse = trackStatusService.getTrackStatus(new int[]{1});
 
         Assertions.assertNotNull(serviceResponse);
-        assertEquals(serviceResponse.getStatusCode(), HttpStatus.OK);
-        assertEquals("{}", serviceResponse.getBody());
+        assertEquals(objectMapper.writeValueAsString(new ArrayList<>()), objectMapper.writeValueAsString(serviceResponse));
     }
 }
