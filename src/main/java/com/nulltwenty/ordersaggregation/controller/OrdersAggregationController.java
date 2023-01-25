@@ -1,7 +1,6 @@
 package com.nulltwenty.ordersaggregation.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
 import com.nulltwenty.ordersaggregation.model.dto.PricingDTO;
 import com.nulltwenty.ordersaggregation.model.dto.ShipmentDTO;
@@ -33,9 +32,6 @@ public class OrdersAggregationController {
     private TrackStatusService trackStatusService;
     @Autowired
     private PricingService pricingService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @GetMapping(value = "/aggregation")
     @ResponseStatus(HttpStatus.OK)
