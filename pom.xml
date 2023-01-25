@@ -7,12 +7,27 @@
     <groupId>com.nulltwenty</groupId>
     <artifactId>OrdersAggregation</artifactId>
     <version>1.0</version>
-
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.nulltwenty.ordersaggregation.OrdersAggregationApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.0.2</version>
+    </parent>
     <dependencies>
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
@@ -68,5 +83,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>
