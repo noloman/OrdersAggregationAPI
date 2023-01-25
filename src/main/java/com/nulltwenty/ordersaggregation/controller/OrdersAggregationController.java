@@ -1,6 +1,5 @@
 package com.nulltwenty.ordersaggregation.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nulltwenty.ordersaggregation.model.AggregatedResponse;
 import com.nulltwenty.ordersaggregation.model.dto.PricingDTO;
 import com.nulltwenty.ordersaggregation.model.dto.ShipmentDTO;
@@ -44,7 +43,7 @@ public class OrdersAggregationController {
         return ResponseEntity.ok().body(createAggregatedResponseAsJson(shipmentOrderList, trackStatusOrderList, pricingOrderList));
     }
 
-    private AggregatedResponse createAggregatedResponseAsJson(List<ShipmentDTO> shipmentList, List<TrackDTO> trackList, List<PricingDTO> pricingList) throws JsonProcessingException {
+    private AggregatedResponse createAggregatedResponseAsJson(List<ShipmentDTO> shipmentList, List<TrackDTO> trackList, List<PricingDTO> pricingList) {
         AggregatedResponse aggregatedResponse = new AggregatedResponse();
 
         Map<String, String[]> shipmentsMap = new HashMap<>();
